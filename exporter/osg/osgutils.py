@@ -264,12 +264,12 @@ def isActionLinkedToObject(action, objects_name):
 
 def unselectAllObjects():
     for obj in bpy.context.selected_objects:
-        obj.select = False
+        obj.select_set(False)
 
 
 def selectObjects(object_list):
     for obj in object_list:
-        obj.select = True
+        obj.select_set(False)
 
 
 def spaceSafe(bonename):
@@ -292,6 +292,7 @@ def setArmaturesPosePosition(scene, pose_position, armatures=[]):
         if arm_data.pose_position != pose_position:
             arm_data.pose_position = pose_position
             modified.append(armature)
-
-    scene.update()
+    
+    bpy.context.view_layer.update() # 2.80
+    #scene.update() 2.79
     return modified

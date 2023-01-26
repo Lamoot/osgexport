@@ -63,7 +63,9 @@ def findMaterial(name, root):
                 return found
     return None
 
-
+# =============================================================
+## MAIN WRITING FUNCTIONALITY
+# =============================================================
 class Writer(object):
     instances = {}
     wrote_elements = {}
@@ -127,9 +129,10 @@ class Writer(object):
         return obj.serialize(output)
 
 
+# Write an object - WORKS
 class Object(Writer):
     instance = 0
-
+    
     def __init__(self, *args, **kwargs):
         Writer.__init__(self, *args)
         self.dataVariance = "UNKNOWN"
@@ -1053,6 +1056,7 @@ class DrawElements(Object):
         output.write(self.encode("$#}\n"))
 
 
+# Stuff to write geometry
 class Geometry(Object):
     def __init__(self, *args, **kwargs):
         Object.__init__(self, *args, **kwargs)
@@ -1096,21 +1100,39 @@ class Geometry(Object):
             self.stateset.indent_level = self.indent_level + 2
             self.stateset.write(output)
             output.write(self.encode("$#}\n"))
-
+        
+        print("I got to serializing content but have nothing to write")
+        # Writes either quads or triangles from vertices
+        # Each line is an element and contains inddexes of vertices used
+        # ======================================
         if len(self.primitives):
+            print("I got to writing faces but have nothing to write")
             output.write(self.encode("$#PrimitiveSetList %d {\n" % (len(self.primitives))))
             for i in self.primitives:
                 i.indent_level = self.indent_level + 2
                 i.write(output)
             output.write(self.encode("$#}\n"))
+        # ======================================
 
+        
+        # Writes vertices, each line is a vertex and its coordinates
+        # =======================================================
         if self.vertexes:
+            print("I got to writing vertices but have nothing to write")
             self.vertexes.indent_level = self.indent_level + 1
             self.vertexes.write(output)
+        
+        # Writes normals, each line is a vertex and its normal vector
+        # ===========================================================
         if self.normals:
+            print("I got to writing normals but have nothing to write")
             self.normals.indent_level = self.indent_level + 1
             self.normals.write(output)
+        
+        # Writes vertex normals, each line is a vertex and its colour
+        # ==========================================================
         if self.colors:
+            print("I got to writing vertex colours but have nothing to write")
             self.colors.indent_level = self.indent_level + 1
             self.colors.write(output)
 
@@ -1128,6 +1150,10 @@ class Geometry(Object):
 
 
 #  animation node ######################################
+
+
+
+# Write Bone
 class Bone(MatrixTransform):
     def __init__(self, skeleton=None, bone=None, parent=None, **kwargs):
         MatrixTransform.__init__(self, **kwargs)
@@ -1204,7 +1230,7 @@ class Bone(MatrixTransform):
         output.write(self.encode("$#InvBindMatrixInSkeletonSpace {\n"))
         self.writeMatrix(output, matrix)
 
-
+# Write skeleton
 class Skeleton(MatrixTransform):
     def __init__(self, name="", matrix=None):
         MatrixTransform.__init__(self)
@@ -1236,7 +1262,7 @@ class Skeleton(MatrixTransform):
         MatrixTransform.serializeContent(self, output)
         output.write(self.encode("$}\n"))
 
-
+# Write blendshapes
 class MorphGeometry(Geometry):
     def __init__(self, *args, **kwargs):
         Geometry.__init__(self, *args, **kwargs)
@@ -1267,7 +1293,7 @@ class MorphGeometry(Geometry):
                 target.write(output)
             output.write(self.encode("$#}\n"))
 
-
+#Write skeleton container
 class RigGeometry(Geometry):
     def __init__(self, *args, **kwargs):
         Geometry.__init__(self, *args, **kwargs)

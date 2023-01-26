@@ -46,7 +46,8 @@ def bakeMorphTargets(frame_start,
         'Collect shape keys factors for each frame in frame range'
         for f in frame_range:
             scene.frame_set(f)
-            scene.update()
+            bpy.context.view_layer.update()
+            #scene.update() 2.79
             for block in morph_info:
                 morph_info[block].append(block.value)
 
@@ -79,7 +80,8 @@ def bakeMorphTargets(frame_start,
         keyFrames = [block.frame for block in shape.key_blocks]
         for f in frame_range:
             scene.frame_set(f)
-            scene.update()
+            bpy.context.view_layer.update()
+            #scene.update() 2.79
             values = evaluateActiveShapeKeys(shape.eval_time, keyFrames)
             for block in morph_info:
                 if block == values['previous']:
@@ -121,7 +123,8 @@ def bakeMorphTargets(frame_start,
     cleanAction(new_action)
     shape.animation_data.action = original_action
     scene.frame_set(frame_back)
-    scene.update()
+    bpy.context.view_layer.update()
+    #scene.update() 2.79
 
     return new_action
 
@@ -234,7 +237,8 @@ def bakeAction(blender_object,
     # Collect transformations
     for f in frame_range:
         scene.frame_set(f)
-        scene.update()
+        bpy.context.view_layer.update()
+        #scene.update() 2.79
         if do_pose:
             pose_info.append(poseFrameInfo(blender_object, do_visual_keying))
         if do_object:
@@ -362,11 +366,13 @@ def bakeAction(blender_object,
         # Setting back matrices is required since baking process changes these values
         # and it can affect further constraints bakings. Note that the order is important here
         scene.frame_set(frame_back)
-        scene.update()
+        bpy.context.view_layer.update()
+        #scene.update() 2.79
         blender_object.matrix_parent_inverse = matrix_parent_inverse_backup
         blender_object.matrix_local = matrix_local_backup
         blender_object.matrix_basis = matrix_basis_backup
-        scene.update()
+        bpy.context.view_layer.update()
+        #scene.update() 2.79
 
     # -------------------------------------------------------------------------
     # Clean
