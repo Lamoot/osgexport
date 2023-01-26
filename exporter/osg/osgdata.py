@@ -1188,8 +1188,13 @@ class BlenderObjectToGeometry(object):
 
     def createStateSetMaterial(self, mat_source, stateset, material):
         """
-        Reads a blender material into an osg stateset/material
-        The material is a default one so it works in 2.80 and then we hook it into actual Blender materials
+        Reads a blender material into an osg stateset/material        
+        Writes the following section (with values) of a material
+            Ambient TRUE Front Back
+            Diffuse TRUE Front Back
+            Specular TRUE Front Back
+            Emission TRUE Front Back
+            Shininess TRUE Front Back
         """
         anim = createAnimationMaterialAndSetCallback(material, mat_source, self.config, self.unique_objects)
         if anim:
@@ -1200,15 +1205,69 @@ class BlenderObjectToGeometry(object):
         # Blender 2.80 doesn't have the "use_shadeless" property of a material.
         # We'll hook it to an emission shader node once we get to that.
         
+        shader = None
+        if not mat_source.node_tree.nodes:
+            pass
+        else:
+            for node in mat_source.node_tree.nodes:    
+                if node.type == "EEVEE_SPECULAR" or node.type == "EMISSION":
+                    shader = node
+                    break 
+        
+        alpha = 1.0
+         
+        if shader is None:
+            material.diffuse = (1.0, 1.0, 1.0, alpha)      
+            material.ambient = (0.0, 0.0, 0.0, 1.0)
+            material.specular = (1.0, 1.0, 1.0, 1.0)
+            material.emission = (0.0, 0.0, 0.0, 1.0)       
+            material.shininess = 12.5
+        elif shader.type == "EEVEE_SPECULAR":
+            material.diffuse = (shader.inputs[0].default_value[0],
+                                shader.inputs[0].default_value[1],
+                                shader.inputs[0].default_value[2],
+                                1.0)      
+            material.ambient = (bpy.context.scene.world.color[0],
+                                bpy.context.scene.world.color[1],
+                                bpy.context.scene.world.color[2],
+                                1.0)
+            material.specular = (shader.inputs[1].default_value[0],
+                                 shader.inputs[1].default_value[1],
+                                 shader.inputs[1].default_value[2],
+                                 1.0)
+            material.emission = (shader.inputs[3].default_value[0],
+                                 shader.inputs[3].default_value[1],
+                                 shader.inputs[3].default_value[2],
+                                 1.0)        
+            material.shininess = ((1 - shader.inputs[2].default_value) * 100 / 512 ) * 128    
+        elif shader.type == "EMISSION":
+            stateset.modes["GL_LIGHTING"] = "OFF"
+            material.diffuse = (shader.inputs[0].default_value[0],
+                                shader.inputs[0].default_value[1],
+                                shader.inputs[0].default_value[2],
+                                1.0)        
+            material.ambient = (bpy.context.scene.world.color[0],
+                                bpy.context.scene.world.color[1],
+                                bpy.context.scene.world.color[2],
+                                1.0)
+            material.specular = (shader.inputs[1].default_value[0],
+                                 shader.inputs[1].default_value[1],
+                                 shader.inputs[1].default_value[2],
+                                 1.0) 
+            material.emission = (shader.inputs[3].default_value[0],
+                                 shader.inputs[3].default_value[1],
+                                 shader.inputs[3].default_value[2],
+                                 1.0)       
+            material.shininess = ((1 - shader.inputs[2].default_value) * 100 / 512 ) * 128
+                
+                
         #if mat_source.use_shadeless:
         #    stateset.modes["GL_LIGHTING"] = "OFF"
 
-        alpha = 1.0
         # Let's first write a simple material
         #if mat_source.use_transparency:
         #    alpha = 1.0 - mat_source.alpha
 
-        material.diffuse = (1.0, 1.0, 1.0, alpha)
         # we premultiply color with intensity to have rendering near blender for opengl fixed pipeline
         #refl = mat_source.diffuse_intensity
         #material.diffuse = (mat_source.diffuse_color[0] * refl,
@@ -1222,8 +1281,7 @@ class BlenderObjectToGeometry(object):
         if alpha != 1.0:
             stateset.modes["GL_BLEND"] = "ON"
 
-
-        material.ambient = (0, 0, 0, 1.0)        
+      
         #ambient_factor = mat_source.ambient
         #if bpy.context.scene.world:
             #material.ambient = ((bpy.context.scene.world.ambient_color[0]) * ambient_factor,
@@ -1233,7 +1291,6 @@ class BlenderObjectToGeometry(object):
         #else:
             #material.ambient = (0, 0, 0, 1.0)
 
-        material.specular = (0.0, 0.0, 0.0, 1)
         # we premultiply color with intensity to have rendering near blender for opengl fixed pipeline
         #spec = mat_source.specular_intensity
         #material.specular = (mat_source.specular_color[0] * spec,
@@ -1241,13 +1298,11 @@ class BlenderObjectToGeometry(object):
                              #mat_source.specular_color[2] * spec,
                              #1)
 
-        material.emission = (0.0, 0.0, 0.0, 1)
         #emissive_factor = mat_source.emit
         #material.emission = (mat_source.diffuse_color[0] * emissive_factor,
                              #mat_source.diffuse_color[1] * emissive_factor,
                              #mat_source.diffuse_color[2] * emissive_factor,
                              #1)
-        material.shininess = 12.5
         #material.shininess = (mat_source.specular_hardness / 512.0) * 128.0
 
         material_data = self.createStateSetMaterialData(mat_source, stateset)
@@ -1263,8 +1318,7 @@ class BlenderObjectToGeometry(object):
     def createStateSetMaterialData(self, mat_source, stateset): # COLLECT BLENDER MATERIAL PROPERTIES
         """
         Reads a blender material into an osg stateset/material json userdata
-        To get it working for 2.80 we default to a generic white material first
-        and we'll 
+        Writes the separate osg::StringValueObject stuff of a material for each channel included bellow
         """
         
         #def premultAlpha(slot, data):
@@ -1274,45 +1328,80 @@ class BlenderObjectToGeometry(object):
         #def useAlpha(slot, data):
             #if slot.texture and slot.texture.use_alpha:
                 #data["UseAlpha"] = True
-
         data = {}
-
-        data["DiffuseIntensity"] = 1.0
-        #data["DiffuseIntensity"] = mat_source.diffuse_intensity
+        shader = None
         
-        data["DiffuseColor"] = [1.0, 1.0, 1.0]
-        #data["DiffuseColor"] = [mat_source.diffuse_color[0],
-        #                        mat_source.diffuse_color[1],
-        #                        mat_source.diffuse_color[2]]
-
-        data["SpecularIntensity"] = 0.5
-        #data["SpecularIntensity"] = mat_source.specular_intensity
+        # Let's check whether we are using the correct shader node to access its data
+        # otherwise fall back to a generic material. We assume users are careful enough
+        # to only include a single shader node in the material node graph as we don't
+        # support anything else anyway.
+        if not mat_source.node_tree.nodes:
+            pass
+        else:
+            for node in mat_source.node_tree.nodes:    
+                if node.type == "EEVEE_SPECULAR" or node.type == "EMISSION":
+                    shader = node
+                    break
         
-        data["SpecularColor"] = [0.5, 0.5, 0.5]
-        #data["SpecularColor"] = [mat_source.specular_color[0],
-        #                         mat_source.specular_color[1],
-        #                         mat_source.specular_color[2]]
-
-        data["SpecularHardness"] = 50
-        #data["SpecularHardness"] = mat_source.specular_hardness
+        if shader is None:
+            data["DiffuseIntensity"] = 1.0        
+            data["DiffuseColor"] = [1.0, 1.0, 1.0]
+            data["SpecularIntensity"] = 0.5
+            data["SpecularColor"] = [0.5, 0.5, 0.5]        
+            data["SpecularHardness"] = 50
+            data["Shadeless"] = False
+            data["Emit"] = 0.0
+            data["Ambient"] = 0.0
+            data["Translucency"] = 0.0
+            data["DiffuseShader"] = "LAMBERT"
+            data["SpecularShader"] = "COOKTORR"
+            data["TextureSlots"] = {}
+        elif shader.type == "EEVEE_SPECULAR":
+            data["DiffuseIntensity"] = 1.0
+            data["DiffuseColor"] = shader.inputs[0].default_value[:3]
+            data["SpecularIntensity"] = 1.0
+            data["SpecularColor"] = shader.inputs[1].default_value[:3]
+            data["SpecularHardness"] = (1 - shader.inputs[2].default_value) * 100
+            data["Shadeless"] = False
+            data["Emit"] = shader.inputs[3].default_value[:3]
+            data["Ambient"] = bpy.context.scene.world.color
+            data["Translucency"] = 0.0
+            data["DiffuseShader"] = "LAMBERT"
+            data["SpecularShader"] = "COOKTORR"
+            data["TextureSlots"] = {}        
+        elif shader.type == "EMISSION":
+            data["DiffuseIntensity"] = 1.0
+            data["DiffuseColor"] = shader.inputs[0].default_value[:3]
+            data["SpecularIntensity"] = 1.0
+            data["SpecularColor"] = shader.inputs[1].default_value[:3]
+            data["SpecularHardness"] = (1 - shader.inputs[2].default_value) * 100
+            data["Shadeless"] = True
+            data["Translucency"] = 0.0
+            data["DiffuseShader"] = "LAMBERT"
+            data["SpecularShader"] = "COOKTORR"
+            data["TextureSlots"] = {}
+        
+        
 
 
         # Blender 2.80 doesn't have any of the following material properties anymore
-        # ==========================================================================
-        
-        data["Shadeless"] = False       
-        data["Emit"] = 0.0
-        data["Ambient"] = 0.0
+        # ==========================================================================        
+    
+        #data["DiffuseIntensity"] = mat_source.diffuse_intensity
+        #data["DiffuseColor"] = [mat_source.diffuse_color[0],
+        #                        mat_source.diffuse_color[1],
+        #                        mat_source.diffuse_color[2]]
+        #data["SpecularIntensity"] = mat_source.specular_intensity
+        #data["SpecularColor"] = [mat_source.specular_color[0],
+        #                         mat_source.specular_color[1],
+        #                         mat_source.specular_color[2]]
+        #data["SpecularHardness"] = mat_source.specular_hardness
         #if mat_source.use_shadeless:
             #data["Shadeless"] = True
         #else:
             #data["Emit"] = mat_source.emit
             #data["Ambient"] = mat_source.ambient
-        
-        data["Translucency"] = 0.1
         #data["Translucency"] = mat_source.translucency
-        
-        data["DiffuseShader"] = "LAMBERT"
         #data["DiffuseShader"] = mat_source.diffuse_shader        
         #if mat_source.use_transparency:
             #data["Transparency"] = True
@@ -1328,7 +1417,6 @@ class BlenderObjectToGeometry(object):
             #data["DiffuseFresnel"] = mat_source.diffuse_fresnel
             #data["DiffuseFresnelFactor"] = mat_source.diffuse_fresnel_factor
 
-        data["SpecularShader"] = "COOKTORR"
         #data["SpecularShader"] = mat_source.specular_shader
         #if mat_source.specular_shader == "TOON":
             #data["SpecularToonSize"] = mat_source.specular_toon_size
@@ -1340,7 +1428,7 @@ class BlenderObjectToGeometry(object):
         #if mat_source.specular_shader == "BLINN":
             #data["SpecularIor"] = mat_source.specular_ior
 
-        data["TextureSlots"] = {}
+
         # Blender 2.80 doesn't have texture slots anymore, only Image nodes connected to the shader
         #texture_list = mat_source.texture_slots
         #if DEBUG:
