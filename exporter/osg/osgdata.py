@@ -1335,6 +1335,8 @@ class BlenderObjectToGeometry(object):
         # otherwise fall back to a generic material. We assume users are careful enough
         # to only include a single shader node in the material node graph as we don't
         # support anything else anyway.
+        if not mat_source.node_tree:
+            pass
         if not mat_source.node_tree.nodes:
             pass
         else:
@@ -1625,14 +1627,18 @@ class BlenderObjectToGeometry(object):
                 vcolors = tuple()
             
             #Get UV coordinates of the current vertex
-            # DISABLE FOR NOW
             #========================================
             #texcoords = [tuple(truncateVector(list(uv.data[faceindex].uv[facevertexindex])))
-                         #for uv in mesh.uv_layers]
                          #for uv in mesh.tessface_uv_textures] 2.79
             
-            #Of currently handled face, return vertices and their info and some shit.
-            return (face.vertices[facevertexindex], tuple(truncateVector(normal)), None, vcolors)
+            texcoords = []
+            # we are inputing face corners of this face, but we need to get the index of this face 
+            # corner within the mesh
+            loop = mesh.polygons[faceindex].loop_indices[facevertexindex]  
+            
+            for uv in mesh.uv_layers:
+                texcoords.append(tuple(truncateVector(list(uv.data[loop].uv))))
+
             return (face.vertices[facevertexindex], tuple(truncateVector(normal)), tuple(texcoords), vcolors)
 
         # Do stuff on all faces of a mesh
@@ -1673,11 +1679,13 @@ class BlenderObjectToGeometry(object):
                     osg_normals.getArray().append(key[1])
                     osg_vertexes.getArray().append(list(mesh.vertices[vert_index].co))
                     
-                    # DISABLED FOR NOW
                     # beware this enumerate, order can be different ?
-                    #for idx, uv in enumerate(mesh.uv_layers):
                     #for idx, uv in enumerate(mesh.tessface_uv_textures): 2.79
                         #osg_uvs.setdefault(uv.name, TexCoordArray()).getArray().append(key[2][idx])
+                    
+                    for idx, uv_layer in enumerate(mesh.uv_layers):
+                        osg_uvs.setdefault(uv_layer.name, TexCoordArray()).getArray().append(key[2][idx])
+                        print(key[2])
 
                     if vertex_colors:
                         col = key[len(key) - 1]
