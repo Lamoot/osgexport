@@ -944,7 +944,7 @@ class BlenderObjectToGeometry(object):
         #     self.mesh = self.object.to_mesh(self.config.scene, True, 'PREVIEW')
         self.material_animations = {}
 
-    #def createTexture2D(self, mtex): # TEXTURES DISABLED; NOT CALLED
+    #def createTexture2D(self, mtex): # Not used anymore as Blender 2.80 doesn't have textures tied to the material the same way.
         #image_object = None
         #try:
             #image_object = mtex.texture.image
@@ -967,28 +967,28 @@ class BlenderObjectToGeometry(object):
         #self.unique_objects.registerTexture(mtex.texture, texture)
         #return texture
 
-    #def createTexture2DFromNode(self, node): # TEXTURES DISABLED; NOT CALLED
-        #image_object = None
-        #try:
-            #image_object = node.image
-        #except:
-            #image_object = None
-        #if image_object is None:
-            #Log("Warning: [[blender]] The texture node {} is skipped since it has no Image".format(node))
-            #return None
+    def createTexture2DFromNode(self, node): # TEXTURES DISABLED; NOT CALLED
+        image_object = None
+        try:
+            image_object = node.image
+        except:
+            image_object = None
+        if image_object is None:
+            Log("Warning: [[blender]] The texture node {} is skipped since it has no Image".format(node))
+            return None
 
-        #if self.unique_objects.hasTexture(node):
-            #return self.unique_objects.getTexture(node)
+        if self.unique_objects.hasTexture(node):
+            return self.unique_objects.getTexture(node)
 
-        #texture = Texture2D()
-        #texture.name = node.image.name
+        texture = Texture2D()
+        texture.name = node.image.name
 
         #reference texture relative to export path
-        #filename = createImageFilename(self.config.texture_prefix, image_object)
-        #texture.file = filename
-        #texture.source_image = image_object
-        #self.unique_objects.registerTexture(node, texture)
-        #return texture
+        filename = createImageFilename(self.config.texture_prefix, image_object)
+        texture.file = filename
+        texture.source_image = image_object
+        self.unique_objects.registerTexture(node, texture)
+        return texture
 
     def adjustUVLayerFromMaterial(self, geom, material, mesh_uv_textures):
         """
@@ -1096,7 +1096,7 @@ class BlenderObjectToGeometry(object):
     
     #def createStateSetShaderNodeJSON(self, mat_source, stateset, material): # NODE STUFF JSON (DISABLED)
         #"""
-        # Serializes a blender shadernode into a JSON object
+        #Serializes a blender shadernode into a JSON object
         #"""
         #source_tree = mat_source.node_tree
 
@@ -1155,7 +1155,7 @@ class BlenderObjectToGeometry(object):
 
             #tree['nodes'][source_node.name] = node
 
-        # safely delete unused nodes
+        #safely delete unused nodes
         #nodes = tree['nodes']
         #for name in list(nodes.keys()):
             #node = nodes[name]
@@ -1185,6 +1185,9 @@ class BlenderObjectToGeometry(object):
                                                       #"[{}, {}, {}]".format(value[0],
                                                                             #value[1],
                                                                             #value[2])))
+
+# ==============================================================================================
+
 
     def createStateSetMaterial(self, mat_source, stateset, material):
         """
@@ -1328,6 +1331,7 @@ class BlenderObjectToGeometry(object):
         #def useAlpha(slot, data):
             #if slot.texture and slot.texture.use_alpha:
                 #data["UseAlpha"] = True
+                
         data = {}
         shader = None
         
@@ -1345,6 +1349,7 @@ class BlenderObjectToGeometry(object):
                     shader = node
                     break
         
+        # Shader basic properties
         if shader is None:
             data["DiffuseIntensity"] = 1.0        
             data["DiffuseColor"] = [1.0, 1.0, 1.0]
@@ -1382,8 +1387,45 @@ class BlenderObjectToGeometry(object):
             data["DiffuseShader"] = "LAMBERT"
             data["SpecularShader"] = "COOKTORR"
             data["TextureSlots"] = {}
+
+        # Textures
+        texture_list = []
+        
+        # Populate the texture list from valid image nodes
+        if shader is not None:
+            for node in mat_source.node_tree.nodes:
+                if node.type != "TEX_IMAGE":
+                    continue
+                elif not node.image:
+                    continue
+                else:
+                    texture_list.append(node)
         
         
+        for i, texture_node in enumerate(texture_list):
+            if texture_node is None:
+                continue
+
+            texture = self.createTexture2DFromNode(texture_node)
+            if texture is None:
+                continue
+
+            data_texture_slot = data["TextureSlots"].setdefault(i, {})
+            
+            if node.outputs[0].links[0].to_socket == shader.inputs[0]:
+                data_texture_slot["DiffuseColor"] = 1.0
+            elif node.outputs[0].links[0].to_socket == shader.inputs[1]:
+                data_texture_slot["SpecularColor"] = 1.0
+            elif node.outputs[0].links[0].to_socket == shader.inputs[3]:
+                data_texture_slot["Emit"] = 1.0
+            elif node.outputs[0].links[0].to_socket == shader.inputs[5]:
+                data_texture_slot["Normal"] = 1.0
+            #use blend
+            data_texture_slot["BlendType"] = "MIX"
+
+            stateset.texture_attributes.setdefault(0, []).append(texture)
+            stateset.modes["GL_BLEND"] = "OFF"
+  
 
 
         # Blender 2.80 doesn't have any of the following material properties anymore
@@ -1506,9 +1548,8 @@ class BlenderObjectToGeometry(object):
                 userData.append(StringValueObject(key, userdata))
 
         slot_name = lambda index, label: "{:02}_{}".format(index, label)
-
+        
         userData = stateset.getOrCreateUserData()
-        # We have textures disabled in createStateSetMaterialData() for now
         for index, slot in data["TextureSlots"].items():
             for key, value in slot.items():
                 userData.append(StringValueObject(slot_name(index, key), toUserData(value)))
@@ -1537,7 +1578,6 @@ class BlenderObjectToGeometry(object):
             target.factor = key.value
 
 
-# SEPARATES MESH INTO MATERIALS SLOTS AND SUCH; BUT DOESN?T CURRENTLY WORK
 
     def createGeometryForMaterialIndex(self, material_index, mesh):
         if hasShapeKeys(self.object):
@@ -1658,8 +1698,6 @@ class BlenderObjectToGeometry(object):
                     morph_map.append(vert_index)
                     uvs = []
                     
-                    # DISABLED FOR NOW
-                    #for uv in mesh.uv_layers:
                     #for uv in mesh.tessface_uv_textures: 2.79
                         #uvs.append(uv.data[face.index].uv[facevertexindex])
 
@@ -1685,8 +1723,7 @@ class BlenderObjectToGeometry(object):
                     
                     for idx, uv_layer in enumerate(mesh.uv_layers):
                         osg_uvs.setdefault(uv_layer.name, TexCoordArray()).getArray().append(key[2][idx])
-                        print(key[2])
-
+                        
                     if vertex_colors:
                         col = key[len(key) - 1]
                         osg_colors.getArray().append([col[0], col[1], col[2]])
@@ -1742,7 +1779,6 @@ class BlenderObjectToGeometry(object):
         if stateset is not None:
             geom.stateset = stateset
         
-        # DISABLE UV STUFF FOR NOW
         #if len(mesh.materials) > 0 and mesh.materials[material_index] is not None:
             #self.adjustUVLayerFromMaterial(geom, mesh.materials[material_index], uv_textures)
 
