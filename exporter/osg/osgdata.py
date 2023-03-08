@@ -268,10 +268,6 @@ class Export(object):
             return blender_object.name
         return "no name"
 
-    def isObjectVisible(self, blender_object):
-        #return blender_object.visible_get(self.config.scene) or not self.config.only_visible
-        return blender_object.visible_get() or not self.config.only_visible
-
     def createAnimationsObject(self, osg_object, blender_object, config, update_callback, unique_objects,parse_all_actions=False):
         if not config.export_anim or len(bpy.data.actions) == 0:
             return None
@@ -404,7 +400,8 @@ class Export(object):
         # Check if the object is visible. The visibility will be used for meshes and lights
         # to determine if we keep it or not. Other objects have to be taken into account even if they
         # are not visible as they can be used as modifiers (avoiding some crashs during the export)
-        is_visible = self.isObjectVisible(blender_object)
+        # Mesh data is not written while objects still get added as nodes in the scene.
+        is_visible = blender_object.visible_get() or not self.config.only_visible
         Log("")
 
         osg_object = None
