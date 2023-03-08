@@ -269,7 +269,7 @@ def unselectAllObjects():
 
 def selectObjects(object_list):
     for obj in object_list:
-        obj.select_set(False)
+        obj.select_set(True)
 
 
 def spaceSafe(bonename):
