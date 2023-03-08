@@ -97,18 +97,18 @@ class Writer(object):
         return text.encode('utf-8')
 
     def writeMatrix(self, output, matrix):
-        if bpy.app.version[0] >= 2 and bpy.app.version[1] >= 62:
-            for i in range(0, 4):
-                output.write(self.encode("$##%s %s %s %s\n" % (STRFLT(matrix[0][i]),
-                                                               STRFLT(matrix[1][i]),
-                                                               STRFLT(matrix[2][i]),
-                                                               STRFLT(matrix[3][i]))))
-        else:
-            for i in range(0, 4):
-                output.write(self.encode("$##%s %s %s %s\n" % (STRFLT(matrix[i][0]),
-                                                               STRFLT(matrix[i][1]),
-                                                               STRFLT(matrix[i][2]),
-                                                               STRFLT(matrix[i][3]))))
+        #if bpy.app.version[0] >= 2 and bpy.app.version[1] >= 62:
+        for i in range(0, 4):
+            output.write(self.encode("$##%s %s %s %s\n" % (STRFLT(matrix[0][i]),
+                                                            STRFLT(matrix[1][i]),
+                                                            STRFLT(matrix[2][i]),
+                                                            STRFLT(matrix[3][i]))))
+        #else:
+        #for i in range(0, 4):
+        #    output.write(self.encode("$##%s %s %s %s\n" % (STRFLT(matrix[i][0]),
+        #                                                    STRFLT(matrix[i][1]),
+        #                                                    STRFLT(matrix[i][2]),
+        #                                                    STRFLT(matrix[i][3]))))
         output.write(self.encode("$#}\n"))
 
     @staticmethod
