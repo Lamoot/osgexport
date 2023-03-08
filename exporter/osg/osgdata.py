@@ -242,22 +242,22 @@ class Export(object):
         if item is not None:
             self.items.append(item)
 
-    def evaluateGroup(self, blender_object, item, rootItem):
-        if blender_object.dupli_group is None or len(blender_object.dupli_group.objects) == 0:
+    def evaluateCollection(self, blender_object, item, rootItem):
+        if blender_object.instance_collection is None or len(blender_object.instance_collection.objects) == 0:
             return
 
-        Log("resolving {} for {} offset {}".format(blender_object.dupli_group.name,
+        Log("resolving {} for {} offset {}".format(blender_object.instance_collection.name,
                                                    blender_object.name,
-                                                   blender_object.dupli_group.dupli_offset))
+                                                   blender_object.instance_collection.instance_offset))
 
         group = MatrixTransform()
-        group.matrix = Matrix.Translation(-blender_object.dupli_group.dupli_offset)
+        group.matrix = Matrix.Translation(-blender_object.instance_collection.instance_offset)
         item.children.append(group)
 
         # for group we disable the only visible
         config_visible = self.config.only_visible
         self.config.only_visible = False
-        for o in blender_object.dupli_group.objects:
+        for o in blender_object.instance_collection.objects:
             Log("object {}".format(o))
             self.exportChildrenRecursively(o, group, rootItem)
         self.config.only_visible = config_visible
@@ -373,8 +373,8 @@ class Export(object):
                 if blender_object.type == "MESH":
                     osg_geode = self.createGeodeFromObject(blender_object)
                     osg_object.children.append(osg_geode)
-                else:
-                    self.evaluateGroup(blender_object, osg_object, osg_root)
+                elif blender_object.type == "EMPTY":
+                    self.evaluateCollection(blender_object, osg_object, osg_root)
             return osg_object
 
         def handleBoneChild(blender_object, osg_object):
@@ -1681,6 +1681,7 @@ class BlenderObjectToGeometry(object):
                 texcoords.append(tuple(truncateVector(list(uv.data[loop].uv))))
 
             return (face.vertices[facevertexindex], tuple(truncateVector(normal)), tuple(texcoords), vcolors)
+
         # Do stuff on all faces of a mesh
         #================================
         for face in faces:
