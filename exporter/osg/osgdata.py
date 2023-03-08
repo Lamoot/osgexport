@@ -1650,7 +1650,11 @@ class BlenderObjectToGeometry(object):
         # 'facevertexindex' is the current vertex of the current face
         # This function is used a bit lower when we iterate over the faces and is used for each face.
         #============================================================================================ 
-        def get_vertex_key(faceindex, facevertexindex):
+        def get_vertex_key(faceindex, facevertexindex):            
+            # we are inputing an index of a face-corner per currently handled face.
+            # However we need to get the index of this face-corner within the mesh
+            # and not relative to the face. Blender calls face_corners loops.
+            loop = mesh.polygons[faceindex].loop_indices[facevertexindex]  
             
             #Get normals
             #===========
@@ -1662,7 +1666,7 @@ class BlenderObjectToGeometry(object):
             #Get VColors
             #===========
             if vertex_colors:
-                vcolors = tuple(getattr(vertex_colors.data[faceindex], 'color{}'.format(facevertexindex + 1)))
+                vcolors = tuple(list(vertex_colors.data[loop].color[:3]))
             else:
                 vcolors = tuple()
             
@@ -1672,15 +1676,11 @@ class BlenderObjectToGeometry(object):
                          #for uv in mesh.tessface_uv_textures] 2.79
             
             texcoords = []
-            # we are inputing face corners of this face, but we need to get the index of this face 
-            # corner within the mesh
-            loop = mesh.polygons[faceindex].loop_indices[facevertexindex]  
             
             for uv in mesh.uv_layers:
                 texcoords.append(tuple(truncateVector(list(uv.data[loop].uv))))
 
             return (face.vertices[facevertexindex], tuple(truncateVector(normal)), tuple(texcoords), vcolors)
-
         # Do stuff on all faces of a mesh
         #================================
         for face in faces:
