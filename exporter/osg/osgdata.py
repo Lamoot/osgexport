@@ -332,7 +332,11 @@ class Export(object):
             matrix = getDeltaMatrixFrom(blender_object.parent, blender_object)
             osg_object = MatrixTransform()
             osg_object.setName(blender_object.name)
-            osg_object.matrix = matrix
+            
+            # When scaling the exported result, we want to only multiply location values of objects
+            mtx_util = Matrix([[0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,self.config.scale_factor-1]])
+            osg_object.matrix = (matrix * self.config.scale_factor).normalized() - mtx_util
+            
             lightItem = self.createLight(blender_object)
             self.createAnimationsObject(osg_object, blender_object, self.config,
                                         createAnimationUpdate(blender_object,
@@ -350,8 +354,11 @@ class Export(object):
             matrix = getDeltaMatrixFrom(blender_object.parent, blender_object)
             osg_object = MatrixTransform()
             osg_object.setName(blender_object.name)
+            
+            # When scaling the exported result, we want to only multiply location values of objects
+            mtx_util = Matrix([[0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,self.config.scale_factor-1]])
+            osg_object.matrix = (matrix.copy() * self.config.scale_factor).normalized() - mtx_util
 
-            osg_object.matrix = matrix.copy()
             if self.config.zero_translations and parent is None:
                 if bpy.app.version[0] >= 2 and bpy.app.version[1] >= 62:
                     print("zero_translations option has not been converted to blender 2.62")
@@ -1699,6 +1706,13 @@ class BlenderObjectToGeometry(object):
                     #for uv in mesh.tessface_uv_textures: 2.79
                         #uvs.append(uv.data[face.index].uv[facevertexindex])
 
+                    # Vertex 3D positions, multiplied by the exporter's scale factor
+                    osg_vertexes.getArray().append(list(mesh.vertices[vert_index].co * self.config.scale_factor))
+                    
+                    # Normals
+                    osg_normals.getArray().append(key[1])
+                    
+                    # Vertex groups
                     if self.object.vertex_groups:
                         for vertex_group in mesh.vertices[vert_index].groups:
                             influence = [self.object.vertex_groups[vertex_group.group].name, vertex_group.weight]
@@ -1711,17 +1725,16 @@ class BlenderObjectToGeometry(object):
                                     vgroups[influence[0]] = vg
                                 else:
                                     vgroups[influence[0]].vertexes.append((newindex, vertex_group.weight))
-
-                    osg_normals.getArray().append(key[1])
-                    osg_vertexes.getArray().append(list(mesh.vertices[vert_index].co))
                     
                     # beware this enumerate, order can be different ?
                     #for idx, uv in enumerate(mesh.tessface_uv_textures): 2.79
                         #osg_uvs.setdefault(uv.name, TexCoordArray()).getArray().append(key[2][idx])
                     
+                    # UV coordinates 
                     for idx, uv_layer in enumerate(mesh.uv_layers):
                         osg_uvs.setdefault(uv_layer.name, TexCoordArray()).getArray().append(key[2][idx])
-                        
+                    
+                    # Vertex colors    
                     if vertex_colors:
                         col = key[len(key) - 1]
                         osg_colors.getArray().append([col[0], col[1], col[2]])
