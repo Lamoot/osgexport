@@ -125,7 +125,7 @@ def menu_export_osg_model(self, context):
     # default_path = os.path.splitext(bpy.data.filepath)[0] + "_" + bpy.context.scene.name
     # default_path = default_path.replace('.', '_')
     # self.layout.operator(OSGGUI.bl_idname, text="OSG Model(.osg)").filepath = default_path
-    self.layout.operator(OSGGUI.bl_idname, text="OSGT(.osgt)")
+    self.layout.operator(OSGGUI.bl_idname, text="OpenMW Native (.osgt)")
 
 
 from bpy.props import *
@@ -342,7 +342,6 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
 
         self.EXPORTANIM = self.config.export_anim
         self.APPLYMODIFIERS = self.config.apply_modifiers
-        self.ZERO_TRANSLATIONS = self.config.zero_translations
         self.LOG = self.config.log
         self.BAKE_ALL = self.config.bake_animations
         self.USE_QUATERNIONS = self.config.use_quaternions
@@ -360,6 +359,7 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
         self.VIEWER_PATH = self.config.viewer_path
         self.TEXTURE_PREFIX = self.config.texture_prefix
         self.EXPORT_ALL_SCENES = self.config.export_all_scenes
+        self.SCALE_FACTOR = self.config.scale_factor
 
         if bpy.data.filepath in self.config.history:
             self.filepath = self.config.history[bpy.data.filepath]
@@ -385,7 +385,6 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
         self.config.export_anim = self.EXPORTANIM
         self.config.apply_modifiers = self.APPLYMODIFIERS
         self.config.log = self.LOG
-        self.config.zero_translations = self.ZERO_TRANSLATIONS
         self.config.bake_animations = self.BAKE_ALL
         self.config.use_quaternions = self.USE_QUATERNIONS
         self.config.bake_constraints = self.BAKE_CONSTRAINTS
@@ -399,6 +398,7 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
         self.config.osgconv_embed_textures = self.OSGCONV_EMBED_TEXTURES
         self.config.export_all_scenes = self.EXPORT_ALL_SCENES
         self.config.osgconv_cleanup = self.OSGCONV_CLEANUP
+        self.config.scale_factor = self.SCALE_FACTOR
 
         try:
             cfg = os.path.join(bpy.utils.user_resource('CONFIG'), "osgExport.cfg")
@@ -422,6 +422,9 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
 
         return {'FINISHED'}
 
+
+# USER INTERFACE ===============================================================================
+# ==============================================================================================
 
 class OSGT_PT_export_include(bpy.types.Panel):
     bl_space_type = 'FILE_BROWSER'
@@ -476,8 +479,7 @@ class OSGT_PT_export_transform(bpy.types.Panel):
         operator = sfile.active_operator
         
         col = layout.column(align = False)        
-        #col.prop(operator, 'SCALE_FACTOR')
-        col.prop(operator, 'ZERO_TRANSLATIONS')
+        col.prop(operator, 'SCALE_FACTOR')
 
 
 class OSGT_PT_export_geometry(bpy.types.Panel):

@@ -359,12 +359,6 @@ class Export(object):
             mtx_util = Matrix([[0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,self.config.scale_factor-1]])
             osg_object.matrix = (matrix.copy() * self.config.scale_factor).normalized() - mtx_util
 
-            if self.config.zero_translations and parent is None:
-                if bpy.app.version[0] >= 2 and bpy.app.version[1] >= 62:
-                    print("zero_translations option has not been converted to blender 2.62")
-                else:
-                    osg_object.matrix[3].xyz = Vector()
-
             self.createAnimationsObject(osg_object, blender_object, self.config,
                                         createAnimationUpdate(blender_object,
                                                               UpdateMatrixTransform(name=osg_object.name),
