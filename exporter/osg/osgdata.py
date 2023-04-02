@@ -331,11 +331,12 @@ class Export(object):
         def parseLight(blender_light):
             matrix = getDeltaMatrixFrom(blender_object.parent, blender_object)
             osg_object = MatrixTransform()
-            osg_object.setName(blender_object.name)
-            
-            # When scaling the exported result, we want to only multiply location values of objects
-            mtx_util = Matrix([[0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,self.config.scale_factor-1]])
-            osg_object.matrix = (matrix * self.config.scale_factor).normalized() - mtx_util
+            osg_object.setName(blender_object.name)            
+            osg_object.matrix = matrix
+            # When scaling the exported result, we want to multiply only object's location values
+            osg_object.matrix[0][3] *= self.config.scale_factor
+            osg_object.matrix[1][3] *= self.config.scale_factor
+            osg_object.matrix[2][3] *= self.config.scale_factor
             
             lightItem = self.createLight(blender_object)
             self.createAnimationsObject(osg_object, blender_object, self.config,
@@ -353,11 +354,12 @@ class Export(object):
             # matrix for our use.
             matrix = getDeltaMatrixFrom(blender_object.parent, blender_object)
             osg_object = MatrixTransform()
-            osg_object.setName(blender_object.name)
-            
-            # When scaling the exported result, we want to only multiply location values of objects
-            mtx_util = Matrix([[0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,self.config.scale_factor-1]])
-            osg_object.matrix = (matrix.copy() * self.config.scale_factor).normalized() - mtx_util
+            osg_object.setName(blender_object.name)            
+            osg_object.matrix = matrix.copy()
+            # When scaling the exported result, we want to multiply only object's location values
+            osg_object.matrix[0][3] *= self.config.scale_factor
+            osg_object.matrix[1][3] *= self.config.scale_factor
+            osg_object.matrix[2][3] *= self.config.scale_factor
 
             self.createAnimationsObject(osg_object, blender_object, self.config,
                                         createAnimationUpdate(blender_object,
