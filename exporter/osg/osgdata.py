@@ -1601,6 +1601,7 @@ class BlenderObjectToGeometry(object):
         
         uv_textures = mesh.uv_layers
         vertex_colors = mesh.vertex_colors.active
+        mesh.calc_normals_split()
         
         # Check if the mesh has any faces
         #================================
@@ -1667,7 +1668,10 @@ class BlenderObjectToGeometry(object):
             #Get normals
             #===========
             if face.use_smooth:
-                normal = list(mesh.vertices[face.vertices[facevertexindex]].normal)
+                if mesh.has_custom_normals:
+                    normal = list(mesh.loops[loop].normal)
+                else:
+                    normal = list(mesh.vertices[face.vertices[facevertexindex]].normal)
             else:
                 normal = list(face.normal)
             
