@@ -1592,7 +1592,13 @@ class BlenderObjectToGeometry(object):
             #faces = mesh.faces
             #uv_textures = mesh.uv_textures
         # Checks for Blender version when bmesh was introduced. 2.80 and onwards are far away from that.
-        faces = mesh.polygons
+        
+        mesh.calc_loop_triangles()
+        faces = mesh.loop_triangles
+        # When we don't force triangles but support also quads or polylines.
+        # It fails with ngons though:
+        #faces = mesh.polygons
+        
         uv_textures = mesh.uv_layers
         vertex_colors = mesh.vertex_colors.active
         
@@ -1652,7 +1658,11 @@ class BlenderObjectToGeometry(object):
             # we are inputing an index of a face-corner per currently handled face.
             # However we need to get the index of this face-corner within the mesh
             # and not relative to the face. Blender calls face_corners loops.
-            loop = mesh.polygons[faceindex].loop_indices[facevertexindex]  
+            loop = mesh.loop_triangles[faceindex].loops[facevertexindex] 
+            
+            # When we don't force triangles but support also quads or polylines.
+            # It fails with ngons though:
+            # loop = mesh.polygons[faceindex].loop_indices[facevertexindex]
             
             #Get normals
             #===========
