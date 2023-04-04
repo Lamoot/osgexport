@@ -1184,7 +1184,6 @@ class BlenderObjectToGeometry(object):
 
 # ==============================================================================================
 
-
     def createStateSetMaterial(self, mat_source, stateset, material):
         """
         Reads a blender material into an osg stateset/material        
@@ -1200,9 +1199,6 @@ class BlenderObjectToGeometry(object):
             for osg_object in (stateset, material):
                 stateset.dataVariance = "DYNAMIC";
             self.material_animations[anim.name] = anim
-
-        # Blender 2.80 doesn't have the "use_shadeless" property of a material.
-        # We'll hook it to an emission shader node once we get to that.
         
         shader = None
         if not mat_source.node_tree.nodes:
@@ -1245,19 +1241,10 @@ class BlenderObjectToGeometry(object):
                                 shader.inputs[0].default_value[1],
                                 shader.inputs[0].default_value[2],
                                 1.0)        
-            material.ambient = (bpy.context.scene.world.color[0],
-                                bpy.context.scene.world.color[1],
-                                bpy.context.scene.world.color[2],
-                                1.0)
-            material.specular = (shader.inputs[1].default_value[0],
-                                 shader.inputs[1].default_value[1],
-                                 shader.inputs[1].default_value[2],
-                                 1.0) 
-            material.emission = (shader.inputs[3].default_value[0],
-                                 shader.inputs[3].default_value[1],
-                                 shader.inputs[3].default_value[2],
-                                 1.0)       
-            material.shininess = ((1 - shader.inputs[2].default_value) * 100 / 512 ) * 128
+            material.ambient = (0.0, 0.0, 0.0, 1.0)
+            material.specular = (0.0, 0.0, 0.0, 1.0)
+            material.emission = (0.0, 0.0, 0.0, 1.0)       
+            material.shininess = 0
                 
                 
         #if mat_source.use_shadeless:
@@ -1314,7 +1301,7 @@ class BlenderObjectToGeometry(object):
 
         return stateset
 
-    def createStateSetMaterialData(self, mat_source, stateset): # COLLECT BLENDER MATERIAL PROPERTIES
+    def createStateSetMaterialData(self, mat_source, stateset):
         """
         Reads a blender material into an osg stateset/material json userdata
         Writes the separate osg::StringValueObject stuff of a material for each channel included bellow
@@ -1359,6 +1346,7 @@ class BlenderObjectToGeometry(object):
             data["DiffuseShader"] = "LAMBERT"
             data["SpecularShader"] = "COOKTORR"
             data["TextureSlots"] = {}
+        
         elif shader.type == "EEVEE_SPECULAR":
             data["DiffuseIntensity"] = 1.0
             data["DiffuseColor"] = shader.inputs[0].default_value[:3]
@@ -1371,19 +1359,71 @@ class BlenderObjectToGeometry(object):
             data["Translucency"] = 0.0
             data["DiffuseShader"] = "LAMBERT"
             data["SpecularShader"] = "COOKTORR"
-            data["TextureSlots"] = {}        
+            data["TextureSlots"] = {}
+            
+            # Textures
+            # We're only writing a single diffuse texture that's required by OpenMW, but the logic is from a more
+            # general system that was already present in the exporter and works with the rest of the code.
+            texture_list = []
+            for node in mat_source.node_tree.nodes:
+                if node.type != "TEX_IMAGE":
+                    continue
+                elif not node.image:
+                    continue
+                elif shader.inputs[0].links[0].from_node == node:
+                    texture_list.append(node)
+            
+            for i, texture_node in enumerate(texture_list):
+                if texture_node is None:
+                    continue
+                texture = self.createTexture2DFromNode(texture_node)
+                texture.name = "DiffuseMap"
+                data_texture_slot = data["TextureSlots"].setdefault(i, {})
+                data_texture_slot["BlendType"] = "MIX"
+                stateset.texture_attributes.setdefault(0, []).append(texture)
+                stateset.modes["GL_BLEND"] = "OFF"
+                data_texture_slot["DiffuseColor"] = 1.0
+
+                    
         elif shader.type == "EMISSION":
             data["DiffuseIntensity"] = 1.0
             data["DiffuseColor"] = shader.inputs[0].default_value[:3]
             data["SpecularIntensity"] = 1.0
-            data["SpecularColor"] = shader.inputs[1].default_value[:3]
-            data["SpecularHardness"] = (1 - shader.inputs[2].default_value) * 100
+            data["SpecularColor"] = (1.0, 1.0, 1.0, 1.0)
+            data["SpecularHardness"] = 50
             data["Shadeless"] = True
+            data["Emit"] = 0.0
+            data["Ambient"] = 0.0
             data["Translucency"] = 0.0
             data["DiffuseShader"] = "LAMBERT"
             data["SpecularShader"] = "COOKTORR"
             data["TextureSlots"] = {}
-
+            
+            # Textures
+            # We're only writing a single diffuse texture that's required by OpenMW, but the logic is from a more
+            # general system that was already present in the exporter and works with the rest of the code.
+            texture_list = []
+            for node in mat_source.node_tree.nodes:
+                if node.type != "TEX_IMAGE":
+                    continue
+                elif not node.image:
+                    continue
+                elif shader.inputs[0].links[0].from_node == node:
+                    texture_list.append(node)
+            
+            for i, texture_node in enumerate(texture_list):
+                if texture_node is None:
+                    continue
+                texture = self.createTexture2DFromNode(texture_node)
+                texture.name = "DiffuseMap"
+                data_texture_slot = data["TextureSlots"].setdefault(i, {})
+                data_texture_slot["BlendType"] = "MIX"
+                stateset.texture_attributes.setdefault(0, []).append(texture)
+                stateset.modes["GL_BLEND"] = "OFF"
+                data_texture_slot["DiffuseColor"] = 1.0       
+        
+        
+        """
         # Textures
         texture_list = []
         
@@ -1401,13 +1441,12 @@ class BlenderObjectToGeometry(object):
         for i, texture_node in enumerate(texture_list):
             if texture_node is None:
                 continue
-
+            
             texture = self.createTexture2DFromNode(texture_node)
-            if texture is None:
-                continue
 
             data_texture_slot = data["TextureSlots"].setdefault(i, {})
             
+            # Take shader node's values
             if node.outputs[0].links[0].to_socket == shader.inputs[0]:
                 data_texture_slot["DiffuseColor"] = 1.0
             elif node.outputs[0].links[0].to_socket == shader.inputs[1]:
@@ -1418,10 +1457,9 @@ class BlenderObjectToGeometry(object):
                 data_texture_slot["Normal"] = 1.0
             #use blend
             data_texture_slot["BlendType"] = "MIX"
-
             stateset.texture_attributes.setdefault(0, []).append(texture)
             stateset.modes["GL_BLEND"] = "OFF"
-  
+        """
 
 
         # Blender 2.80 doesn't have any of the following material properties anymore
