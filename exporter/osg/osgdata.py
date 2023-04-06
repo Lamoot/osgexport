@@ -352,8 +352,18 @@ class Export(object):
             # matrix for our use.
             matrix = getDeltaMatrixFrom(blender_object.parent, blender_object)
             osg_object = MatrixTransform()
-            osg_object.setName(blender_object.name)            
-            osg_object.matrix = matrix.copy()
+            
+            # OpenMW looks for a specific object name to see if it's used for physics collisions
+            # Artist's workflow is that a mesh needs a collision modifier assigned in Blender
+            # and we then replace its exported name so OpenMW uses it for collisions
+            if blender_object.modifiers:
+                for modifier in blender_object.modifiers:
+                    if modifier.type == "COLLISION":
+                        osg_object.setName("collision")
+            else:
+                osg_object.setName(blender_object.name)       
+            
+            osg_object.matrix = matrix.copy()           
             # When scaling the exported result, we want to multiply only object's location values
             osg_object.matrix.translation *= self.config.scale_factor
 
