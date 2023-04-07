@@ -770,7 +770,6 @@ class Export(object):
         if self.config.apply_modifiers and has_non_armature_modifiers and not hasShapeKeys(mesh):
             # Blender object and to_mesh() both require to be touched by the dependency graph for this to work
             dg = bpy.context.evaluated_depsgraph_get()
-            mesh = mesh.evaluated_get(dg)
             mesh_object = mesh.evaluated_get(dg).to_mesh(preserve_all_data_layers=True, depsgraph=dg)
             # mesh_object = mesh.to_mesh(self.config.scene, True, 'PREVIEW') 2.79 way
         else:
