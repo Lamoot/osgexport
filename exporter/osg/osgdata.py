@@ -666,53 +666,57 @@ class Export(object):
         with open(filename, "wb") as sfile:
             # sfile.write(str(self.root).encode('utf-8'))
             self.root.writeFile(sfile)
-
-        nativePath = os.path.join(os.path.abspath(self.config.getFullPath()), self.config.texture_prefix)
-        # blenderPath = bpy.path.relpath(nativePath)
-        if len(self.images) > 0:
-            try:
-                if not os.path.exists(nativePath):
-                    os.mkdir(nativePath)
-            except:
-                Log("can't create textures directory {}".format(nativePath))
-                raise
-
-        copied_images = []
-        for i in self.images:
-            if i is not None:
-                imagename = bpy.path.basename(createImageFilename("", i))
+        
+        if self.config.export_textures:
+            # Exported textures folder
+            nativePath = os.path.join(os.path.abspath(self.config.getFullPath()), self.config.texture_prefix)
+            # blenderPath = bpy.path.relpath(nativePath)
+            if len(self.images) > 0:
                 try:
-                    if i.packed_file:
-                        original_filepath = i.filepath_raw
-                        try:
-                            if len(imagename.split('.')) == 1:
-                                imagename += ".png"
-                            filename = os.path.join(nativePath, imagename)
-                            if not os.path.exists(filename):
-                                # record which images that were newly copied and can be safely
-                                # cleaned up
-                                copied_images.append(filename)
-                            i.filepath_raw = filename
-                            Log("packed file, save it to {}"
-                                .format(os.path.abspath(bpy.path.abspath(filename))))
-                            i.save()
-                        except:
-                            Log("failed to save file {} to {}".format(imagename, nativePath))
-                        i.filepath_raw = original_filepath
-                    else:
-                        filepath = os.path.abspath(bpy.path.abspath(i.filepath))
-                        texturePath = os.path.join(nativePath, imagename)
-                        if os.path.exists(filepath):
-                            if not os.path.exists(texturePath):
-                                # record which images that were newly copied and can be safely
-                                # cleaned up
-                                copied_images.append(texturePath)
-                            shutil.copy(filepath, texturePath)
-                            Log("copy file {} to {}".format(filepath, texturePath))
+                    if not os.path.exists(nativePath):
+                        os.mkdir(nativePath)
+                except:
+                    Log("can't create textures directory {}".format(nativePath))
+                    raise
+
+            copied_images = []
+            
+            # Exported textures
+            for i in self.images:
+                if i is not None:
+                    imagename = bpy.path.basename(createImageFilename("", i))
+                    try:
+                        if i.packed_file:
+                            original_filepath = i.filepath_raw
+                            try:
+                                if len(imagename.split('.')) == 1:
+                                    imagename += ".png"
+                                filename = os.path.join(nativePath, imagename)
+                                if not os.path.exists(filename):
+                                    # record which images that were newly copied and can be safely
+                                    # cleaned up
+                                    copied_images.append(filename)
+                                i.filepath_raw = filename
+                                Log("packed file, save it to {}"
+                                    .format(os.path.abspath(bpy.path.abspath(filename))))
+                                i.save()
+                            except:
+                                Log("failed to save file {} to {}".format(imagename, nativePath))
+                            i.filepath_raw = original_filepath
                         else:
-                            Log("file {} not available".format(filepath))
-                except Exception as e:
-                    Log("error while trying to copy file {} to {}: {}".format(imagename, nativePath, e))
+                            filepath = os.path.abspath(bpy.path.abspath(i.filepath))
+                            texturePath = os.path.join(nativePath, imagename)
+                            if os.path.exists(filepath):
+                                if not os.path.exists(texturePath):
+                                    # record which images that were newly copied and can be safely
+                                    # cleaned up
+                                    copied_images.append(texturePath)
+                                shutil.copy(filepath, texturePath)
+                                Log("copy file {} to {}".format(filepath, texturePath))
+                            else:
+                                Log("file {} not available".format(filepath))
+                    except Exception as e:
+                        Log("error while trying to copy file {} to {}: {}".format(imagename, nativePath, e))
 
         filetoview = self.config.getFullName("osgt")
         if self.config.osgconv_to_ive:

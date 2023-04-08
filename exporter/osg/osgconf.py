@@ -81,6 +81,7 @@ class Config(object):
         self.defaultattr("history", {})
         self.defaultattr("json_materials", False)
         self.defaultattr("json_shaders", False)
+        self.defaultattr("export_textures", False)
 
         self.filepath = ""
         self.fullpath = ""

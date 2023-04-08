@@ -315,6 +315,12 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
         min=0.01, max=1000.0,
         default=1.0,
         )
+    
+    EXPORT_TEXTURES : BoolProperty(
+        name="Export Textures",
+        description="Create a folder containing used textures at the same location as the exported file.",
+        default=False
+        )
 
     def draw(self, context):
         pass
@@ -360,6 +366,7 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
         self.TEXTURE_PREFIX = self.config.texture_prefix
         self.EXPORT_ALL_SCENES = self.config.export_all_scenes
         self.SCALE_FACTOR = self.config.scale_factor
+        self.EXPORT_TEXTURES = self.config.export_textures
 
         if bpy.data.filepath in self.config.history:
             self.filepath = self.config.history[bpy.data.filepath]
@@ -399,6 +406,7 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
         self.config.export_all_scenes = self.EXPORT_ALL_SCENES
         self.config.osgconv_cleanup = self.OSGCONV_CLEANUP
         self.config.scale_factor = self.SCALE_FACTOR
+        self.config.export_textures = self.EXPORT_TEXTURES
 
         try:
             cfg = os.path.join(bpy.utils.user_resource('CONFIG'), "osgExport.cfg")
@@ -450,6 +458,7 @@ class OSGT_PT_export_include(bpy.types.Panel):
         col = layout.column(heading = "Limit to", align = True)
         col.prop(operator, 'SELECTED', text="Selected Objects")
         col.prop(operator, 'ONLY_VISIBLE', text="Visible Objects")
+        col.prop(operator, 'EXPORT_TEXTURES')
         #col.prop(operator, 'EXPORT_ALL_SCENES', text="All Scenes")
         
         #col = layout.column(align = False)
