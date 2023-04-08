@@ -42,7 +42,7 @@ def createImageFilename(texturePath, image):
         name = fn[0:i]
     else:
         name = fn
-    # [BMP, IRIS, PNG, JPEG, TARGA, TARGA_RAW, AVI_JPEG, AVI_RAW, FRAMESERVER]
+    # [BMP, IRIS, PNG, JPEG, TARGA, TARGA_RAW, AVI_JPEG, AVI_RAW, FRAMESERVER, DDS]
     if image.file_format == 'PNG':
         ext = "png"
     elif image.file_format == 'HDR':
@@ -55,6 +55,8 @@ def createImageFilename(texturePath, image):
         ext = "bmp"
     elif image.file_format == 'AVI_JPEG' or image.file_format == 'AVI_RAW':
         ext = "avi"
+    elif image.filepath_raw[-3:] == 'dds':
+        ext = "dds"
     else:
         ext = "unknown"
     name = name + "." + ext
