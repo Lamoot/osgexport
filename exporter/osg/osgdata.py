@@ -997,8 +997,13 @@ class BlenderObjectToGeometry(object):
         texture.name = node.image.name
 
         #reference texture relative to export path
-        filename = createImageFilename(self.config.texture_prefix, image_object)
+        #filename = createImageFilename(self.config.texture_prefix, image_object)
+        
+        # OpenMW specific texture path where all textures are in 'data/textures' folder and its subfolders.
+        # Meshes are in 'data/meshes' and their required texture path always starts with 'textures/'
+        filename = image_object.filepath[image_object.filepath.find("data/textures") + len("data/"):]
         texture.file = filename
+        
         texture.source_image = image_object
         self.unique_objects.registerTexture(node, texture)
         return texture
