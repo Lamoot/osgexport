@@ -1382,18 +1382,18 @@ class BlenderObjectToGeometry(object):
             data["DiffuseShader"] = "LAMBERT"
             data["SpecularShader"] = "COOKTORR"
             data["TextureSlots"] = {}
-            
-            # Textures
-            # We're only writing a single diffuse texture that's required by OpenMW, but the logic is from a more
-            # general system that was already present in the exporter and works with the rest of the code.
+            # We're only writing a single diffuse texture that's required by OpenMW,
+            # but the logic is from a more general system that was already present in
+            # the exporter and works with the rest of the code.
             texture_list = []
             for node in mat_source.node_tree.nodes:
                 if node.type != "TEX_IMAGE":
                     continue
                 elif not node.image:
                     continue
-                elif shader.inputs[0].links[0].from_node == node:
-                    texture_list.append(node)
+                elif shader.inputs[0].links:
+                    if shader.inputs[0].links[0].from_node == node:
+                        texture_list.append(node)
             
             for i, texture_node in enumerate(texture_list):
                 if texture_node is None:
@@ -1420,18 +1420,18 @@ class BlenderObjectToGeometry(object):
             data["DiffuseShader"] = "LAMBERT"
             data["SpecularShader"] = "COOKTORR"
             data["TextureSlots"] = {}
-            
-            # Textures
-            # We're only writing a single diffuse texture that's required by OpenMW, but the logic is from a more
-            # general system that was already present in the exporter and works with the rest of the code.
+            # We're only writing a single diffuse texture that's required by OpenMW,
+            # but the logic is from a more general system that was already present in
+            # the exporter and works with the rest of the code.
             texture_list = []
             for node in mat_source.node_tree.nodes:
                 if node.type != "TEX_IMAGE":
                     continue
                 elif not node.image:
                     continue
-                elif shader.inputs[0].links[0].from_node == node:
-                    texture_list.append(node)
+                elif shader.inputs[0].links:
+                    if shader.inputs[0].links[0].from_node == node:
+                        texture_list.append(node)
             
             for i, texture_node in enumerate(texture_list):
                 if texture_node is None:
