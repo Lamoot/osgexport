@@ -1240,6 +1240,12 @@ class BlenderObjectToGeometry(object):
             material.emission = (0.0, 0.0, 0.0, 1.0)       
             material.shininess = 12.5
         elif shader.type == "EEVEE_SPECULAR":
+            stateset.modes["GL_BLEND"] = "OFF"
+            if mat_source.use_backface_culling:
+                stateset.modes["GL_CULL_FACE"] = "FRONT"
+            else:
+                stateset.modes["GL_CULL_FACE"] = "OFF"
+            stateset.modes["GL_LIGHTING"] = "ON"
             material.diffuse = (shader.inputs[0].default_value[0],
                                 shader.inputs[0].default_value[1],
                                 shader.inputs[0].default_value[2],
@@ -1258,6 +1264,11 @@ class BlenderObjectToGeometry(object):
                                  1.0)        
             material.shininess = ((1 - shader.inputs[2].default_value) * 100 / 512 ) * 128    
         elif shader.type == "EMISSION":
+            stateset.modes["GL_BLEND"] = "OFF"
+            if mat_source.use_backface_culling:
+                stateset.modes["GL_CULL_FACE"] = "FRONT"
+            else:
+                stateset.modes["GL_CULL_FACE"] = "OFF"
             stateset.modes["GL_LIGHTING"] = "OFF"
             material.diffuse = (shader.inputs[0].default_value[0],
                                 shader.inputs[0].default_value[1],
