@@ -1231,7 +1231,6 @@ class BlenderObjectToGeometry(object):
                     shader = node
                     break 
         
-        alpha = 1.0
          
         if shader is None:
             material.diffuse = (1.0, 1.0, 1.0, alpha)      
@@ -1240,7 +1239,11 @@ class BlenderObjectToGeometry(object):
             material.emission = (0.0, 0.0, 0.0, 1.0)       
             material.shininess = 12.5
         elif shader.type == "EEVEE_SPECULAR":
-            stateset.modes["GL_BLEND"] = "OFF"
+            alpha = 1 - shader.inputs[4].default_value
+            if mat_source.blend_method != 'OPAQUE':
+                stateset.modes["GL_BLEND"] = "ON"
+            else:
+                stateset.modes["GL_BLEND"] = "OFF"
             if mat_source.use_backface_culling:
                 stateset.modes["GL_CULL_FACE"] = "FRONT"
             else:
@@ -1249,7 +1252,7 @@ class BlenderObjectToGeometry(object):
             material.diffuse = (shader.inputs[0].default_value[0],
                                 shader.inputs[0].default_value[1],
                                 shader.inputs[0].default_value[2],
-                                1.0)      
+                                alpha)      
             material.ambient = (bpy.context.scene.world.color[0],
                                 bpy.context.scene.world.color[1],
                                 bpy.context.scene.world.color[2],
@@ -1264,7 +1267,11 @@ class BlenderObjectToGeometry(object):
                                  1.0)        
             material.shininess = ((1 - shader.inputs[2].default_value) * 100 / 512 ) * 128    
         elif shader.type == "EMISSION":
-            stateset.modes["GL_BLEND"] = "OFF"
+            alpha = 1.0
+            if mat_source.blend_method != 'OPAQUE':
+                stateset.modes["GL_BLEND"] = "ON"
+            else:
+                stateset.modes["GL_BLEND"] = "OFF"
             if mat_source.use_backface_culling:
                 stateset.modes["GL_CULL_FACE"] = "FRONT"
             else:
@@ -1279,7 +1286,7 @@ class BlenderObjectToGeometry(object):
             material.emission = (0.0, 0.0, 0.0, 1.0)       
             material.shininess = 0
                 
-                
+            
         #if mat_source.use_shadeless:
         #    stateset.modes["GL_LIGHTING"] = "OFF"
 
@@ -1297,8 +1304,8 @@ class BlenderObjectToGeometry(object):
         # if alpha not 1 then we set the blending mode on
         #if DEBUG:
             #Log("state material alpha {}".format(alpha))
-        if alpha != 1.0:
-            stateset.modes["GL_BLEND"] = "ON"
+        #if alpha != 1.0:
+        #    stateset.modes["GL_BLEND"] = "ON"
 
       
         #ambient_factor = mat_source.ambient
@@ -1414,7 +1421,6 @@ class BlenderObjectToGeometry(object):
                 data_texture_slot = data["TextureSlots"].setdefault(i, {})
                 data_texture_slot["BlendType"] = "MIX"
                 stateset.texture_attributes.setdefault(0, []).append(texture)
-                stateset.modes["GL_BLEND"] = "OFF"
                 data_texture_slot["DiffuseColor"] = 1.0
 
                     
@@ -1452,7 +1458,6 @@ class BlenderObjectToGeometry(object):
                 data_texture_slot = data["TextureSlots"].setdefault(i, {})
                 data_texture_slot["BlendType"] = "MIX"
                 stateset.texture_attributes.setdefault(0, []).append(texture)
-                stateset.modes["GL_BLEND"] = "OFF"
                 data_texture_slot["DiffuseColor"] = 1.0       
         
         
