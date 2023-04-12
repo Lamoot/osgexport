@@ -1233,7 +1233,7 @@ class BlenderObjectToGeometry(object):
         
          
         if shader is None:
-            material.diffuse = (1.0, 1.0, 1.0, alpha)      
+            material.diffuse = (1.0, 1.0, 1.0, 1.0)      
             material.ambient = (0.0, 0.0, 0.0, 1.0)
             material.specular = (1.0, 1.0, 1.0, 1.0)
             material.emission = (0.0, 0.0, 0.0, 1.0)       
