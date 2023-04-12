@@ -25,21 +25,18 @@ from bpy_extras.io_utils import ExportHelper
 
 
 bl_info = {
-    "name": "Export OSG format (.osgt)",
-    "author": "Cedric Pinson, Jeremy Moles, Peter Amstutz",
+    "name": "OpenMW OpenSceneGraph (.osgt)",
+    "author": "Cedric Pinson, Jeremy Moles, Peter Amstutz, OpenMW",
     "version": (0, 16, 0),
     "blender": (2, 80, 0),
-    "email": "trigrou@gmail.com, jeremy@emperorlinux.com, peter.amstutz@tseboston.com",
     "api": 36339,
     "location": "File > Export > OSG Model (*.osgt)",
-    "description": "Export models and animations for use in OpenSceneGraph",
+    "description": "Export models to OpenMW in OpenSceneGraph's native format.",
     "warning": "",
-    "wiki_url": "https://github.com/cedricpinson/osgexport/wiki",
-    "tracker_url": "http://github.com/cedricpinson/osgexport",
+    "tracker_url": "https://github.com/OpenMW/osgexport/",
     "category": "Import-Export"}
 
-__url__ = bl_info["wiki_url"]
-__email__ = bl_info["email"]
+__url__ = bl_info["tracker_url"]
 __author__ = bl_info["author"]
 __bpydoc__ = bl_info["description"]
 __version__ = bl_info["version"]
@@ -125,7 +122,7 @@ def menu_export_osg_model(self, context):
     # default_path = os.path.splitext(bpy.data.filepath)[0] + "_" + bpy.context.scene.name
     # default_path = default_path.replace('.', '_')
     # self.layout.operator(OSGGUI.bl_idname, text="OSG Model(.osg)").filepath = default_path
-    self.layout.operator(OSGGUI.bl_idname, text="OpenMW Native (.osgt)")
+    self.layout.operator(OSGGUI.bl_idname, text="OpenMW OpenSceneGraph (.osgt)")
 
 
 from bpy.props import *
@@ -166,13 +163,13 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
     
     SELECTED : BoolProperty(
         name="Only Export Selected",
-        description="Only export the selected model",
+        description="Export selected objects only",
         default=False
         )
     
     ONLY_VISIBLE : BoolProperty(
         name="Only Export Visible",
-        description="Only export the visible models",
+        description="Export visible objects only",
         default=False
         )
     
@@ -208,25 +205,13 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
     
     APPLYMODIFIERS : BoolProperty(
         name="Apply Modifiers",
-        description="Apply modifiers before exporting yes/no",
+        description="Apply modifiers to mesh objects, except for the Armature modifier",
         default=True
         )
     
     LOG : BoolProperty(
         name="Write log",
-        description="Write log file yes/no",
-        default=False
-        )
-    
-    JSON_MATERIALS : BoolProperty(
-        name="JSON Materials",
-        description="Export materials into JSON userdata.",
-        default=False
-        )
-    
-    JSON_SHADERS : BoolProperty(
-        name="JSON shaders",
-        description="Export shader graphs into JSON userdata.",
+        description="Write log file",
         default=False
         )
     
@@ -258,18 +243,18 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
     
     ARMATURE_REST : BoolProperty(
         name="Export armature in REST pose",
-        description="Static armatures are exported in REST mode (instead of POSE)",
+        description="Static armatures are exported in REST mode instead of POSE mode",
         default=False
         )
     
     OSGCONV_TO_IVE : BoolProperty(
         name="Convert to IVE (uses osgconv)",
-        description="Use osgconv to convert to IVE",
+        description="Use osgconv to convert the exported file to OpenSceneGraph's IVE format",
         default=False
         )
     
     OSGCONV_EMBED_TEXTURES : BoolProperty(
-        name="Embed textures in IVE",
+        name="Embed textures in the IVE format",
         default=False
         )
     
@@ -318,7 +303,7 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
     
     EXPORT_TEXTURES : BoolProperty(
         name="Export Textures",
-        description="Create a folder containing used textures at the same location as the exported file.",
+        description="Create a textures folder in the same location as the exported file",
         default=False
         )
 
@@ -358,8 +343,6 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
         self.OSGCONV_EMBED_TEXTURES = self.config.osgconv_embed_textures
         self.OSGCONV_PATH = self.config.osgconv_path
         self.OSGCONV_CLEANUP = self.config.osgconv_cleanup
-        self.JSON_MATERIALS = self.config.json_materials
-        self.JSON_SHADERS = self.config.json_shaders
 
         self.RUN_VIEWER = self.config.run_viewer
         self.VIEWER_PATH = self.config.viewer_path
@@ -606,9 +589,6 @@ class OSGT_PT_export_material(bpy.types.Panel):
         operator = sfile.active_operator
         
         col = layout.column(align = True)
-        col.prop(operator, 'JSON_MATERIALS')
-        col.prop(operator, 'JSON_SHADERS')
-        col.prop(operator, 'TEXTURE_PREFIX')
 
 
 class OSGT_PT_export_extra(bpy.types.Panel):

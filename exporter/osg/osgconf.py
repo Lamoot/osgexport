@@ -79,8 +79,6 @@ class Config(object):
         self.defaultattr("osgconv_cleanup", False)
 
         self.defaultattr("history", {})
-        self.defaultattr("json_materials", False)
-        self.defaultattr("json_shaders", False)
         self.defaultattr("export_textures", False)
 
         self.filepath = ""

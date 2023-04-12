@@ -60,13 +60,11 @@ def createAnimationUpdate(blender_object, callback, rotation_mode, prefix="", ze
     scene.frame_set(0)
     blender_object.update_tag(refresh={'OBJECT'})
     bpy.context.view_layer.update()
-    #scene.update() 2.79
 
     lcl_transform = blender_object.matrix_local.copy()
 
     scene.frame_set(backup_frame)
     bpy.context.view_layer.update()
-    #scene.update() 2.79
 
     if blender_object.animation_data:
         action = blender_object.animation_data.action
@@ -775,7 +773,6 @@ class Export(object):
             # Blender object and to_mesh() both require to be touched by the dependency graph for this to work
             dg = bpy.context.evaluated_depsgraph_get()
             mesh_object = mesh.evaluated_get(dg).to_mesh(preserve_all_data_layers=True, depsgraph=dg)
-            # mesh_object = mesh.to_mesh(self.config.scene, True, 'PREVIEW') 2.79 way
         else:
             mesh_object = mesh.data
 
@@ -950,14 +947,10 @@ class BlenderObjectToGeometry(object):
         self.unique_objects = kwargs.get("unique_objects", UniqueObject())
         self.geom_type = Geometry
         self.mesh = kwargs.get("mesh", None)
-
-        # if self.config.apply_modifiers is False:
-        #     self.mesh = self.object.data
-        # else:
-        #     self.mesh = self.object.to_mesh(self.config.scene, True, 'PREVIEW')
         self.material_animations = {}
 
-    #def createTexture2D(self, mtex): # Not used anymore as Blender 2.80 doesn't have textures tied to the material the same way.
+    # Not used anymore as Blender 2.80 doesn't have textures tied to the material the same way.
+    #def createTexture2D(self, mtex):
         #image_object = None
         #try:
             #image_object = mtex.texture.image
@@ -995,24 +988,25 @@ class BlenderObjectToGeometry(object):
 
         texture = Texture2D()
         texture.name = node.image.name
-
-        #reference texture relative to export path
-        #filename = createImageFilename(self.config.texture_prefix, image_object)
         
         # OpenMW specific texture path where all textures are in 'data/textures' folder and its subfolders.
         # Meshes are in 'data/meshes' and their required texture path always starts with 'textures/'
         filename = image_object.filepath[image_object.filepath.find("data/textures") + len("data/"):]
         texture.file = filename
         
+        # Generic OSG exporter texture filepath
+        #filename = createImageFilename(self.config.texture_prefix, image_object)        
+        
         texture.source_image = image_object
         self.unique_objects.registerTexture(node, texture)
         return texture
 
+    # Not used
     def adjustUVLayerFromMaterial(self, geom, material, mesh_uv_textures):
         """
         What does this do?
         UV layer to texture used?
-        Sort UV layer used per texture and fix it so it works properly I guess
+        Sort UV layer used per texture and fix it so it works properly
         """
         uvs = geom.uvs
         if DEBUG:
@@ -1070,8 +1064,9 @@ class BlenderObjectToGeometry(object):
     def createStateSet(self, index_material, mesh):
         """
         Creates a StateSet for a Drawable of osg::Geometry type.
-        osg::Geometry holds the mesh data and StateSet is its part where a material is written.
-        If a Blender mesh has a material it gets written as an Attribute of a StateSet of a Drawable.
+        osg::Geometry holds the mesh data and StateSet is where
+        a material is written. If a Blender mesh has a material
+        it gets written as an Attribute of a StateSet of a Drawable.
         """
         if len(mesh.materials) == 0:
             return None
@@ -1094,15 +1089,18 @@ class BlenderObjectToGeometry(object):
             osg_object.setName(mat_source.name)
             osg_object.getOrCreateUserData().append(StringValueObject("source", "blender"))
         
-        self.createStateSetMaterial(mat_source, stateset, material) # NODE STUFF DISABLED
+        self.createStateSetMaterial(mat_source, stateset, material)
+        
+        # Disabled JSON material export
         #if mat_source.use_nodes is True:
             #self.createStateSetShaderNode(mat_source, stateset, material)
         #else:
             #self.createStateSetMaterial(mat_source, stateset, material)
 
         return stateset
-
-    #def createStateSetShaderNode(self, mat_source, stateset, material): # NODE STUFF (DISABLED)
+    
+    # Disabled JSON material export
+    #def createStateSetShaderNode(self, mat_source, stateset, material):
         #"""
         #Reads a shadernode to an osg stateset/material
         #"""
@@ -1111,8 +1109,8 @@ class BlenderObjectToGeometry(object):
         #else:
             #self.createStateSetShaderNodeUserData(mat_source, material)
 
-    
-    #def createStateSetShaderNodeJSON(self, mat_source, stateset, material): # NODE STUFF JSON (DISABLED)
+    # Disabled JSON material export
+    #def createStateSetShaderNodeJSON(self, mat_source, stateset, material):
         #"""
         #Serializes a blender shadernode into a JSON object
         #"""
@@ -1204,8 +1202,6 @@ class BlenderObjectToGeometry(object):
                                                                             #value[1],
                                                                             #value[2])))
 
-# ==============================================================================================
-
     def createStateSetMaterial(self, mat_source, stateset, material):
         """
         Reads a blender material into an osg stateset/material        
@@ -1229,8 +1225,7 @@ class BlenderObjectToGeometry(object):
             for node in mat_source.node_tree.nodes:    
                 if node.type == "EEVEE_SPECULAR" or node.type == "EMISSION":
                     shader = node
-                    break 
-        
+                    break        
          
         if shader is None:
             material.diffuse = (1.0, 1.0, 1.0, 1.0)      
@@ -1285,21 +1280,6 @@ class BlenderObjectToGeometry(object):
             material.specular = (0.0, 0.0, 0.0, 1.0)
             material.emission = (0.0, 0.0, 0.0, 1.0)       
             material.shininess = 0
-                
-            
-        #if mat_source.use_shadeless:
-        #    stateset.modes["GL_LIGHTING"] = "OFF"
-
-        # Let's first write a simple material
-        #if mat_source.use_transparency:
-        #    alpha = 1.0 - mat_source.alpha
-
-        # we premultiply color with intensity to have rendering near blender for opengl fixed pipeline
-        #refl = mat_source.diffuse_intensity
-        #material.diffuse = (mat_source.diffuse_color[0] * refl,
-                            #mat_source.diffuse_color[1] * refl,
-                            #mat_source.diffuse_color[2] * refl,
-                            #alpha)
 
         # if alpha not 1 then we set the blending mode on
         #if DEBUG:
@@ -1307,33 +1287,10 @@ class BlenderObjectToGeometry(object):
         #if alpha != 1.0:
         #    stateset.modes["GL_BLEND"] = "ON"
 
-      
-        #ambient_factor = mat_source.ambient
-        #if bpy.context.scene.world:
-            #material.ambient = ((bpy.context.scene.world.ambient_color[0]) * ambient_factor,
-                                #(bpy.context.scene.world.ambient_color[1]) * ambient_factor,
-                                #(bpy.context.scene.world.ambient_color[2]) * ambient_factor,
-                                #1.0)
-        #else:
-            #material.ambient = (0, 0, 0, 1.0)
-
-        # we premultiply color with intensity to have rendering near blender for opengl fixed pipeline
-        #spec = mat_source.specular_intensity
-        #material.specular = (mat_source.specular_color[0] * spec,
-                             #mat_source.specular_color[1] * spec,
-                             #mat_source.specular_color[2] * spec,
-                             #1)
-
-        #emissive_factor = mat_source.emit
-        #material.emission = (mat_source.diffuse_color[0] * emissive_factor,
-                             #mat_source.diffuse_color[1] * emissive_factor,
-                             #mat_source.diffuse_color[2] * emissive_factor,
-                             #1)
-        #material.shininess = (mat_source.specular_hardness / 512.0) * 128.0
-
         material_data = self.createStateSetMaterialData(mat_source, stateset)
-
         self.createStateSetMaterialUserData(material_data, stateset, material)
+        
+        # Disabled JSON material export
         #if self.config.json_materials:
             #self.createStateSetMaterialJson(material_data, stateset)
         #else:
@@ -1344,7 +1301,7 @@ class BlenderObjectToGeometry(object):
     def createStateSetMaterialData(self, mat_source, stateset):
         """
         Reads a blender material into an osg stateset/material json userdata
-        Writes the separate osg::StringValueObject stuff of a material for each channel included bellow
+        Writes the separate osg::StringValueObject entries of a material for each item included below
         """
         
         #def premultAlpha(slot, data):
@@ -1459,138 +1416,17 @@ class BlenderObjectToGeometry(object):
                 data_texture_slot["BlendType"] = "MIX"
                 stateset.texture_attributes.setdefault(0, []).append(texture)
                 data_texture_slot["DiffuseColor"] = 1.0       
-        
-        
-        """
-        # Textures
-        texture_list = []
-        
-        # Populate the texture list from valid image nodes
-        if shader is not None:
-            for node in mat_source.node_tree.nodes:
-                if node.type != "TEX_IMAGE":
-                    continue
-                elif not node.image:
-                    continue
-                else:
-                    texture_list.append(node)
-        
-        
-        for i, texture_node in enumerate(texture_list):
-            if texture_node is None:
-                continue
-            
-            texture = self.createTexture2DFromNode(texture_node)
 
-            data_texture_slot = data["TextureSlots"].setdefault(i, {})
-            
-            # Take shader node's values
-            if node.outputs[0].links[0].to_socket == shader.inputs[0]:
-                data_texture_slot["DiffuseColor"] = 1.0
-            elif node.outputs[0].links[0].to_socket == shader.inputs[1]:
-                data_texture_slot["SpecularColor"] = 1.0
-            elif node.outputs[0].links[0].to_socket == shader.inputs[3]:
-                data_texture_slot["Emit"] = 1.0
-            elif node.outputs[0].links[0].to_socket == shader.inputs[5]:
-                data_texture_slot["Normal"] = 1.0
-            #use blend
-            data_texture_slot["BlendType"] = "MIX"
-            stateset.texture_attributes.setdefault(0, []).append(texture)
-            stateset.modes["GL_BLEND"] = "OFF"
-        """
-
-
-        # Blender 2.80 doesn't have any of the following material properties anymore
-        # ==========================================================================        
-    
-        #data["DiffuseIntensity"] = mat_source.diffuse_intensity
-        #data["DiffuseColor"] = [mat_source.diffuse_color[0],
-        #                        mat_source.diffuse_color[1],
-        #                        mat_source.diffuse_color[2]]
-        #data["SpecularIntensity"] = mat_source.specular_intensity
-        #data["SpecularColor"] = [mat_source.specular_color[0],
-        #                         mat_source.specular_color[1],
-        #                         mat_source.specular_color[2]]
-        #data["SpecularHardness"] = mat_source.specular_hardness
-        #if mat_source.use_shadeless:
-            #data["Shadeless"] = True
-        #else:
-            #data["Emit"] = mat_source.emit
-            #data["Ambient"] = mat_source.ambient
-        #data["Translucency"] = mat_source.translucency
-        #data["DiffuseShader"] = mat_source.diffuse_shader        
-        #if mat_source.use_transparency:
-            #data["Transparency"] = True
-            #data["TransparencyMethod"] = mat_source.transparency_method
-        #if mat_source.diffuse_shader == "TOON":
-            #data["DiffuseToonSize"] = mat_source.diffuse_toon_size
-            #data["DiffuseToonSmooth"] = mat_source.diffuse_toon_smooth
-        #if mat_source.diffuse_shader == "OREN_NAYAR":
-            #data["Roughness"] = mat_source.roughness
-        #if mat_source.diffuse_shader == "MINNAERT":
-            #data["Darkness"] = mat_source.roughness
-        #if mat_source.diffuse_shader == "FRESNEL":
-            #data["DiffuseFresnel"] = mat_source.diffuse_fresnel
-            #data["DiffuseFresnelFactor"] = mat_source.diffuse_fresnel_factor
-
-        #data["SpecularShader"] = mat_source.specular_shader
-        #if mat_source.specular_shader == "TOON":
-            #data["SpecularToonSize"] = mat_source.specular_toon_size
-            #data["SpecularToonSmooth"] = mat_source.specular_toon_smooth
-
-        #if mat_source.specular_shader == "WARDISO":
-            #data["SpecularSlope"] = mat_source.specular_slope
-
-        #if mat_source.specular_shader == "BLINN":
-            #data["SpecularIor"] = mat_source.specular_ior
-
-
-        # Blender 2.80 doesn't have texture slots anymore, only Image nodes connected to the shader
-        #texture_list = mat_source.texture_slots
-        #if DEBUG:
-            #Log("texture list {}".format(texture_list))
-
-        #for i, texture_slot in enumerate(texture_list):
-            #if texture_slot is None:
-                #continue
-
-            #texture = self.createTexture2D(texture_slot)
-            #if DEBUG:
-                #Log("texture {} {}".format(i, texture_slot))
-            #if texture is None:
-                #continue
-
-            #data_texture_slot = data["TextureSlots"].setdefault(i, {})
-
-            #for (use_map, name, factor) in (('use_map_diffuse', 'DiffuseIntensity', 'diffuse_factor'),
-                                            #('use_map_color_diffuse', 'DiffuseColor', 'diffuse_color_factor'),
-                                            #('use_map_alpha', 'Alpha', 'alpha_factor'),
-                                            #('use_map_translucency', 'Translucency', 'translucency_factor'),
-                                            #('use_map_specular', 'SpecularIntensity', 'specular_factor'),
-                                            #('use_map_color_spec', 'SpecularColor', 'specular_color_factor'),
-                                            #('use_map_mirror', 'Mirror', 'mirror_factor'),
-                                            #('use_map_normal', 'Normal', 'normal_factor'),
-                                            #('use_map_ambient', 'Ambient', 'ambient_factor'),
-                                            #('use_map_emit', 'Emit', 'emit_factor')):
-                #if getattr(texture_slot, use_map):
-                    #premultAlpha(texture_slot, data_texture_slot)
-                    #useAlpha(texture_slot, data_texture_slot)
-                    #data_texture_slot[name] = getattr(texture_slot, factor)
-
-            # use blend
-            #data_texture_slot["BlendType"] = texture_slot.blend_type
-
-            #stateset.texture_attributes.setdefault(i, []).append(texture)
-
-            #try:
-                #if t.source_image.getDepth() > 24:  # there is an alpha
-                    #stateset.modes["GL_BLEND"] = "ON"
-            #except:
-                #pass
+        #try:
+            #if t.source_image.getDepth() > 24:  # there is an alpha
+                #stateset.modes["GL_BLEND"] = "ON"
+        #except:
+            #pass
 
         return data
-
-    #def createStateSetMaterialJson(self, data, stateset):  # NOT NEEDED
+    
+    # Disabled JSON material export
+    #def createStateSetMaterialJson(self, data, stateset):
         """
         Serialize blender material data into stateset as a JSON user data
         """
@@ -1599,7 +1435,6 @@ class BlenderObjectToGeometry(object):
 
     def createStateSetMaterialUserData(self, data, stateset, material):
         """
-        Produces the text for .osgt
         Serialize blender material data into material as a collection of string user data
         """
         def toUserData(value):
@@ -1650,27 +1485,19 @@ class BlenderObjectToGeometry(object):
             target.factor = key.value
 
 
-
     def createGeometryForMaterialIndex(self, material_index, mesh):
         if hasShapeKeys(self.object):
             geom = MorphGeometry()
         else:
             geom = Geometry()
 
-        geom.groups = {}
-        #if bpy.app.version[0] >= 2 and bpy.app.version[1] >= 63:
-            #faces = mesh.tessfaces 2.79
-            #uv_textures = mesh.tessface_uv_textures
-            #vertex_colors = mesh.tessface_vertex_colors.active
-        #else:
-            #faces = mesh.faces
-            #uv_textures = mesh.uv_textures
-        # Checks for Blender version when bmesh was introduced. 2.80 and onwards are far away from that.
+        geom.groups = {}        
         
+        # Get all geometry as triangles
         mesh.calc_loop_triangles()
         faces = mesh.loop_triangles
-        # When we don't force triangles but support also quads or polylines.
-        # It fails with ngons though:
+        
+        # When we don't want to force triangles but also export quads or polylines:
         #faces = mesh.polygons
         
         uv_textures = mesh.uv_layers
@@ -1678,21 +1505,19 @@ class BlenderObjectToGeometry(object):
         mesh.calc_normals_split()
         
         # Check if the mesh has any faces
-        #================================
         if (len(faces) == 0):
             Log("object {} has no faces, so no materials".format(self.object.name))
             return None
         
         # Check if the mesh has any materials
-        #====================================
         if len(mesh.materials) and mesh.materials[material_index] is not None:
             material_name = mesh.materials[material_index].name
             title = "mesh {} with material {}".format(self.object.name, material_name)
         else:
             title = "mesh {} without material".format(self.object.name)
         Log(title)
-
-
+        
+        # Check some Armature modifier stuff
         arm_modifiers = [mod for mod in self.object.modifiers if mod.type == 'ARMATURE' and mod.object]
         armature_name = ('_' + str(arm_modifiers[-1].object.name)) if arm_modifiers else ''
         if self.object.vertex_groups and self.object.parent \
@@ -1701,7 +1526,6 @@ class BlenderObjectToGeometry(object):
             armature_name = '_' + str(self.object.parent.name)
 
         # Prepare empty arrays of data we'll populate
-        #============================================ 
         collected_faces = []
         morph_map = []
         osg_vertexes = VertexArray()
@@ -1723,24 +1547,18 @@ class BlenderObjectToGeometry(object):
         vertex_index_map = {}
 
 
-        # Collect vertex information based off vertices that form a particular face
-        #==========================================================================
-        # 'faceindex' is the current face
-        # 'facevertexindex' is the current vertex of the current face
-        # This function is used a bit lower when we iterate over the faces and is used for each face.
-        #============================================================================================ 
-        def get_vertex_key(faceindex, facevertexindex):            
+        def get_vertex_key(faceindex, facevertexindex):  
+            # 'faceindex' is the current face
+            # 'facevertexindex' is the current vertex of the current face
+            
             # we are inputing an index of a face-corner per currently handled face.
             # However we need to get the index of this face-corner within the mesh
             # and not relative to the face. Blender calls face_corners loops.
-            loop = mesh.loop_triangles[faceindex].loops[facevertexindex] 
-            
-            # When we don't force triangles but support also quads or polylines.
-            # It fails with ngons though:
+            loop = mesh.loop_triangles[faceindex].loops[facevertexindex]             
+            # When we don't want to force triangles but also export quads or polylines:
             # loop = mesh.polygons[faceindex].loop_indices[facevertexindex]
             
-            #Get normals
-            #===========
+            # Get normals
             if face.use_smooth:
                 if mesh.has_custom_normals:
                     normal = list(mesh.loops[loop].normal)
@@ -1749,27 +1567,20 @@ class BlenderObjectToGeometry(object):
             else:
                 normal = list(face.normal)
             
-            #Get VColors
-            #===========
+            # Get VColors
             if vertex_colors:
                 vcolors = tuple(list(vertex_colors.data[loop].color[:3]))
             else:
                 vcolors = tuple()
             
-            #Get UV coordinates of the current vertex
-            #========================================
-            #texcoords = [tuple(truncateVector(list(uv.data[faceindex].uv[facevertexindex])))
-                         #for uv in mesh.tessface_uv_textures] 2.79
-            
-            texcoords = []
-            
+            # Get UV coordinates of the current vertex            
+            texcoords = []            
             for uv in mesh.uv_layers:
                 texcoords.append(tuple(truncateVector(list(uv.data[loop].uv))))
 
             return (face.vertices[facevertexindex], tuple(truncateVector(normal)), tuple(texcoords), vcolors)
 
-        # Do stuff on all faces of a mesh
-        #================================
+        # 
         for face in faces:
             if face.material_index != material_index:
                 continue
@@ -1777,16 +1588,13 @@ class BlenderObjectToGeometry(object):
             for facevertexindex, vert_index in enumerate(face.vertices):
                 # Uvs and colors are per face and not per vertexes, so need to deduplicate
                 # this here using keys.
-                # A key is build as (vertexIndex, normal, texcoords={},vertex_colors)
+                # A key is build as (vertexIndex, normal, texcoords={}, vertex_colors)
                 key = get_vertex_key(face.index, facevertexindex)
                 if key not in vertex_index_map:
                     newindex = len(osg_vertexes.getArray())
                     vertex_index_map[key] = newindex
                     morph_map.append(vert_index)
                     uvs = []
-                    
-                    #for uv in mesh.tessface_uv_textures: 2.79
-                        #uvs.append(uv.data[face.index].uv[facevertexindex])
 
                     # Vertex 3D positions, multiplied by the exporter's scale factor
                     osg_vertexes.getArray().append(list(mesh.vertices[vert_index].co * self.config.scale_factor))
@@ -1807,12 +1615,8 @@ class BlenderObjectToGeometry(object):
                                     vgroups[influence[0]] = vg
                                 else:
                                     vgroups[influence[0]].vertexes.append((newindex, vertex_group.weight))
-                    
-                    # beware this enumerate, order can be different ?
-                    #for idx, uv in enumerate(mesh.tessface_uv_textures): 2.79
-                        #osg_uvs.setdefault(uv.name, TexCoordArray()).getArray().append(key[2][idx])
-                    
-                    # UV coordinates 
+                                       
+                    # UV coordinates - beware this enumerate, order can be different? 
                     for idx, uv_layer in enumerate(mesh.uv_layers):
                         osg_uvs.setdefault(uv_layer.name, TexCoordArray()).getArray().append(key[2][idx])
                     
@@ -1872,6 +1676,7 @@ class BlenderObjectToGeometry(object):
         if stateset is not None:
             geom.stateset = stateset
         
+        # Was used in 2.79 but not needed for OpenMW needs
         #if len(mesh.materials) > 0 and mesh.materials[material_index] is not None:
             #self.adjustUVLayerFromMaterial(geom, mesh.materials[material_index], uv_textures)
 
@@ -1883,12 +1688,10 @@ class BlenderObjectToGeometry(object):
 
         return geom
 
-
-#======================================================
     def process(self, mesh):
         if bpy.app.version[0] >= 2 and bpy.app.version[1] >= 63:
-            mesh.calc_loop_triangles()  # Generates faces of 3 or 4 vertices
-            #mesh.update(calc_tessface=True)  # Generates faces of 3 or 4 vertices 2.79
+            mesh.calc_loop_triangles()  # Generates faces of 3
+
 
         geometry_list = []
         material_index = 0
@@ -1907,12 +1710,12 @@ class BlenderObjectToGeometry(object):
 
 
     def convert(self):
-        # looks like this was dropped
-        # if self.mesh.vertexUV:
-        #     Log("Warning: [[blender]] mesh %s use sticky UV and it's not supported" % self.object.name)
-
         return self.process(self.mesh)
 
+
+# =========================================================================== #
+# ANIMATION                                                                   #
+# =========================================================================== #
 
 class BlenderAnimationToAnimation(object):
     def __init__(self, *args, **kwargs):

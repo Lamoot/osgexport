@@ -63,9 +63,7 @@ def findMaterial(name, root):
                 return found
     return None
 
-# =============================================================
-## MAIN WRITING FUNCTIONALITY
-# =============================================================
+
 class Writer(object):
     instances = {}
     wrote_elements = {}
@@ -97,18 +95,11 @@ class Writer(object):
         return text.encode('utf-8')
 
     def writeMatrix(self, output, matrix):
-        #if bpy.app.version[0] >= 2 and bpy.app.version[1] >= 62:
         for i in range(0, 4):
             output.write(self.encode("$##%s %s %s %s\n" % (STRFLT(matrix[0][i]),
                                                             STRFLT(matrix[1][i]),
                                                             STRFLT(matrix[2][i]),
                                                             STRFLT(matrix[3][i]))))
-        #else:
-        #for i in range(0, 4):
-        #    output.write(self.encode("$##%s %s %s %s\n" % (STRFLT(matrix[i][0]),
-        #                                                    STRFLT(matrix[i][1]),
-        #                                                    STRFLT(matrix[i][2]),
-        #                                                    STRFLT(matrix[i][3]))))
         output.write(self.encode("$#}\n"))
 
     @staticmethod
@@ -129,7 +120,6 @@ class Writer(object):
         return obj.serialize(output)
 
 
-# Write an object - WORKS
 class Object(Writer):
     instance = 0
     
@@ -1056,7 +1046,6 @@ class DrawElements(Object):
         output.write(self.encode("$#}\n"))
 
 
-# Stuff to write geometry
 class Geometry(Object):
     def __init__(self, *args, **kwargs):
         Object.__init__(self, *args, **kwargs)
@@ -1101,38 +1090,28 @@ class Geometry(Object):
             self.stateset.write(output)
             output.write(self.encode("$#}\n"))
         
-        print("I got to serializing content but have nothing to write")
-        # Writes either quads or triangles from vertices
-        # Each line is an element and contains inddexes of vertices used
-        # ======================================
+        # Writes either quads or triangles from vertices.
+        # Each line represents an element and indexes of vertices
+        # that define that element
         if len(self.primitives):
-            print("I got to writing faces but have nothing to write")
             output.write(self.encode("$#PrimitiveSetList %d {\n" % (len(self.primitives))))
             for i in self.primitives:
                 i.indent_level = self.indent_level + 2
                 i.write(output)
             output.write(self.encode("$#}\n"))
-        # ======================================
-
         
         # Writes vertices, each line is a vertex and its coordinates
-        # =======================================================
         if self.vertexes:
-            print("I got to writing vertices but have nothing to write")
             self.vertexes.indent_level = self.indent_level + 1
             self.vertexes.write(output)
         
         # Writes normals, each line is a vertex and its normal vector
-        # ===========================================================
         if self.normals:
-            print("I got to writing normals but have nothing to write")
             self.normals.indent_level = self.indent_level + 1
             self.normals.write(output)
         
-        # Writes vertex normals, each line is a vertex and its colour
-        # ==========================================================
+        # Writes vertex colors, each line is a vertex and its RGB values
         if self.colors:
-            print("I got to writing vertex colours but have nothing to write")
             self.colors.indent_level = self.indent_level + 1
             self.colors.write(output)
 
@@ -1147,10 +1126,6 @@ class Geometry(Object):
                     emptyTexCoord.indent_level = self.indent_level + 2
                     emptyTexCoord.write(output)
             output.write(self.encode("$#}\n"))
-
-
-#  animation node ######################################
-
 
 
 # Write Bone

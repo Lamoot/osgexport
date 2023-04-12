@@ -29,7 +29,7 @@ from .osgobject import *
 
 
 # IMAGES HELPERS
-# ----------------------------
+# --------------
 def createImageFilename(texturePath, image):
     fn = bpy.path.basename(bpy.path.display_name_from_filepath(image.filepath))
 
@@ -77,7 +77,7 @@ def getImageFilesFromStateSet(stateset):
 
 
 # ARMATURE AND ANIMATION HELPERS
-# ----------------------------
+# ------------------------------
 def findBoneInHierarchy(scene, bonename):
     if scene.name == bonename and (type(scene) == type(Bone()) or type(scene) == type(Skeleton())):
         return scene
@@ -238,7 +238,7 @@ def isObjectMorphAction(action):
 
 
 # OBJECTS HELPERS
-# ------------------------------
+# ---------------
 def getDeltaMatrixFromMatrix(parent, child):
     p = parent
     bi = p.copy()
@@ -295,6 +295,5 @@ def setArmaturesPosePosition(scene, pose_position, armatures=[]):
             arm_data.pose_position = pose_position
             modified.append(armature)
     
-    bpy.context.view_layer.update() # 2.80
-    #scene.update() 2.79
+    bpy.context.view_layer.update()
     return modified
