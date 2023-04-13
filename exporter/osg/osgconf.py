@@ -57,7 +57,6 @@ class Config(object):
         self.defaultattr("export_anim", True)
         self.defaultattr("object_selected", None)
 
-        self.defaultattr("zero_translations", False)
         self.defaultattr("apply_modifiers", False)
         self.defaultattr("bake_animations", False)
         self.defaultattr("use_quaternions", False)
@@ -65,6 +64,7 @@ class Config(object):
         self.defaultattr("bake_frame_step", 1)
         self.defaultattr("arm_rest", False)
         self.defaultattr("osgconv_to_ive", False)
+        self.defaultattr("scale_factor", 1)
         osgconv_util = "osgconv"
         if sys.platform == 'win32':
             osgconv_util += ".exe"
@@ -79,8 +79,7 @@ class Config(object):
         self.defaultattr("osgconv_cleanup", False)
 
         self.defaultattr("history", {})
-        self.defaultattr("json_materials", False)
-        self.defaultattr("json_shaders", False)
+        self.defaultattr("export_textures", False)
 
         self.filepath = ""
         self.fullpath = ""

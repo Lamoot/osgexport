@@ -29,7 +29,7 @@ from .osgobject import *
 
 
 # IMAGES HELPERS
-# ----------------------------
+# --------------
 def createImageFilename(texturePath, image):
     fn = bpy.path.basename(bpy.path.display_name_from_filepath(image.filepath))
 
@@ -42,7 +42,7 @@ def createImageFilename(texturePath, image):
         name = fn[0:i]
     else:
         name = fn
-    # [BMP, IRIS, PNG, JPEG, TARGA, TARGA_RAW, AVI_JPEG, AVI_RAW, FRAMESERVER]
+    # [BMP, IRIS, PNG, JPEG, TARGA, TARGA_RAW, AVI_JPEG, AVI_RAW, FRAMESERVER, DDS]
     if image.file_format == 'PNG':
         ext = "png"
     elif image.file_format == 'HDR':
@@ -55,6 +55,8 @@ def createImageFilename(texturePath, image):
         ext = "bmp"
     elif image.file_format == 'AVI_JPEG' or image.file_format == 'AVI_RAW':
         ext = "avi"
+    elif image.filepath_raw[-3:] == 'dds':
+        ext = "dds"
     else:
         ext = "unknown"
     name = name + "." + ext
@@ -75,7 +77,7 @@ def getImageFilesFromStateSet(stateset):
 
 
 # ARMATURE AND ANIMATION HELPERS
-# ----------------------------
+# ------------------------------
 def findBoneInHierarchy(scene, bonename):
     if scene.name == bonename and (type(scene) == type(Bone()) or type(scene) == type(Skeleton())):
         return scene
@@ -236,7 +238,7 @@ def isObjectMorphAction(action):
 
 
 # OBJECTS HELPERS
-# ------------------------------
+# ---------------
 def getDeltaMatrixFromMatrix(parent, child):
     p = parent
     bi = p.copy()
@@ -264,12 +266,12 @@ def isActionLinkedToObject(action, objects_name):
 
 def unselectAllObjects():
     for obj in bpy.context.selected_objects:
-        obj.select = False
+        obj.select_set(False)
 
 
 def selectObjects(object_list):
     for obj in object_list:
-        obj.select = True
+        obj.select_set(True)
 
 
 def spaceSafe(bonename):
@@ -292,6 +294,6 @@ def setArmaturesPosePosition(scene, pose_position, armatures=[]):
         if arm_data.pose_position != pose_position:
             arm_data.pose_position = pose_position
             modified.append(armature)
-
-    scene.update()
+    
+    bpy.context.view_layer.update()
     return modified

@@ -1,12 +1,19 @@
-### Status - DISCONTINUED
+# OpenMW OpenSceneGraph exporter for Blender
 
-Follow instruction from github to get the repository
+OpenMW OpenSceneGraph exporter for [Blender](https://www.blender.org), making the
+format viable for importing meshes into [OpenMW](https://openmw.org)
+using a libre format.
 
-https://github.com/cedricpinson/osgexport
+This is a fork of the [Blender OpenSceneGraph Exporter](https://github.com/cedricpinson/osgexport/) updated for 2.80+ Blender versions and
+adjusted to support the specifics of Blender to OpenMW asset pipeline.
 
-## Installation (blender 2.7+)
+## Installation (Blender 2.8+)
 
-To install last version of the exporter go in user preference, then 'Install from File' in the Add-ons tab with the zip from https://github.com/cedricpinson/osgexport/releases
+1. Copy the `osg` directory to the location where Blender stores the
+   scripts/addons folder on your system (you should see other io_scene_*
+   folders there from other addons). Copy the entire dir and not just its
+   contents.
+2. Go to the Blender settings and enable the "OpenMW Native" addon.
 
 ## Command line usage
 
@@ -21,12 +28,6 @@ $ BlenderExporter="/path-to-osgexport/blender-2.5/exporter" \
     [--apply-modifiers] [--enable-animation] [--json-materials] [--enable-animation] \
     [--bake-all] [--bake-quaternions]
 ```
-
-## How to report a bug
-
-Open an [issue](https://github.com/cedricpinson/osgexport/issues/new) and send a minimal blender file that produce the problem.
-
-
 ## Tests
 
 To run tests:

@@ -95,18 +95,11 @@ class Writer(object):
         return text.encode('utf-8')
 
     def writeMatrix(self, output, matrix):
-        if bpy.app.version[0] >= 2 and bpy.app.version[1] >= 62:
-            for i in range(0, 4):
-                output.write(self.encode("$##%s %s %s %s\n" % (STRFLT(matrix[0][i]),
-                                                               STRFLT(matrix[1][i]),
-                                                               STRFLT(matrix[2][i]),
-                                                               STRFLT(matrix[3][i]))))
-        else:
-            for i in range(0, 4):
-                output.write(self.encode("$##%s %s %s %s\n" % (STRFLT(matrix[i][0]),
-                                                               STRFLT(matrix[i][1]),
-                                                               STRFLT(matrix[i][2]),
-                                                               STRFLT(matrix[i][3]))))
+        for i in range(0, 4):
+            output.write(self.encode("$##%s %s %s %s\n" % (STRFLT(matrix[0][i]),
+                                                            STRFLT(matrix[1][i]),
+                                                            STRFLT(matrix[2][i]),
+                                                            STRFLT(matrix[3][i]))))
         output.write(self.encode("$#}\n"))
 
     @staticmethod
@@ -129,7 +122,7 @@ class Writer(object):
 
 class Object(Writer):
     instance = 0
-
+    
     def __init__(self, *args, **kwargs):
         Writer.__init__(self, *args)
         self.dataVariance = "UNKNOWN"
@@ -1096,20 +1089,28 @@ class Geometry(Object):
             self.stateset.indent_level = self.indent_level + 2
             self.stateset.write(output)
             output.write(self.encode("$#}\n"))
-
+        
+        # Writes either quads or triangles from vertices.
+        # Each line represents an element and indexes of vertices
+        # that define that element
         if len(self.primitives):
             output.write(self.encode("$#PrimitiveSetList %d {\n" % (len(self.primitives))))
             for i in self.primitives:
                 i.indent_level = self.indent_level + 2
                 i.write(output)
             output.write(self.encode("$#}\n"))
-
+        
+        # Writes vertices, each line is a vertex and its coordinates
         if self.vertexes:
             self.vertexes.indent_level = self.indent_level + 1
             self.vertexes.write(output)
+        
+        # Writes normals, each line is a vertex and its normal vector
         if self.normals:
             self.normals.indent_level = self.indent_level + 1
             self.normals.write(output)
+        
+        # Writes vertex colors, each line is a vertex and its RGB values
         if self.colors:
             self.colors.indent_level = self.indent_level + 1
             self.colors.write(output)
@@ -1127,7 +1128,7 @@ class Geometry(Object):
             output.write(self.encode("$#}\n"))
 
 
-#  animation node ######################################
+# Write Bone
 class Bone(MatrixTransform):
     def __init__(self, skeleton=None, bone=None, parent=None, **kwargs):
         MatrixTransform.__init__(self, **kwargs)
@@ -1204,7 +1205,7 @@ class Bone(MatrixTransform):
         output.write(self.encode("$#InvBindMatrixInSkeletonSpace {\n"))
         self.writeMatrix(output, matrix)
 
-
+# Write skeleton
 class Skeleton(MatrixTransform):
     def __init__(self, name="", matrix=None):
         MatrixTransform.__init__(self)
@@ -1236,7 +1237,7 @@ class Skeleton(MatrixTransform):
         MatrixTransform.serializeContent(self, output)
         output.write(self.encode("$}\n"))
 
-
+# Write blendshapes
 class MorphGeometry(Geometry):
     def __init__(self, *args, **kwargs):
         Geometry.__init__(self, *args, **kwargs)
@@ -1267,7 +1268,7 @@ class MorphGeometry(Geometry):
                 target.write(output)
             output.write(self.encode("$#}\n"))
 
-
+#Write skeleton container
 class RigGeometry(Geometry):
     def __init__(self, *args, **kwargs):
         Geometry.__init__(self, *args, **kwargs)
