@@ -1,6 +1,6 @@
-# OpenMW OSGT exporter for Blender
+# OpenMW OpenSceneGraph exporter for Blender
 
-OpenMW OSGT exporter for [Blender](https://www.blender.org), making the
+OpenMW OpenSceneGraph exporter for [Blender](https://www.blender.org), making the
 format viable for importing meshes into [OpenMW](https://openmw.org)
 using a libre format.
 
