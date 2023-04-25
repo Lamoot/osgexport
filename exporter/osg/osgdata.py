@@ -951,31 +951,7 @@ class BlenderObjectToGeometry(object):
         self.mesh = kwargs.get("mesh", None)
         self.material_animations = {}
 
-    # Not used anymore as Blender 2.80 doesn't have textures tied to the material the same way.
-    #def createTexture2D(self, mtex):
-        #image_object = None
-        #try:
-            #image_object = mtex.texture.image
-        #except:
-            #image_object = None
-        #if image_object is None:
-            #Log("Warning: [[blender]] The texture {} is skipped since it has no Image".format(mtex.name))
-            #return None
-
-        #if self.unique_objects.hasTexture(mtex.texture):
-            #return self.unique_objects.getTexture(mtex.texture)
-
-        #texture = Texture2D()
-        #texture.name = mtex.texture.name
-
-        #reference texture relative to export path
-        #filename = createImageFilename(self.config.texture_prefix, image_object)
-        #texture.file = filename
-        #texture.source_image = image_object
-        #self.unique_objects.registerTexture(mtex.texture, texture)
-        #return texture
-
-    def createTexture2DFromNode(self, node): # TEXTURES DISABLED; NOT CALLED
+    def createTexture2DFromNode(self, node):
         image_object = None
         try:
             image_object = node.image
@@ -1093,117 +1069,8 @@ class BlenderObjectToGeometry(object):
             # osg_object.getOrCreateUserData().append(StringValueObject("source", "blender"))
         
         self.createStateSetMaterial(mat_source, stateset, material)
-        
-        # Disabled JSON material export
-        #if mat_source.use_nodes is True:
-            #self.createStateSetShaderNode(mat_source, stateset, material)
-        #else:
-            #self.createStateSetMaterial(mat_source, stateset, material)
 
         return stateset
-    
-    # Disabled JSON material export
-    #def createStateSetShaderNode(self, mat_source, stateset, material):
-        #"""
-        #Reads a shadernode to an osg stateset/material
-        #"""
-        #if self.config.json_shaders:
-            #self.createStateSetShaderNodeJSON(mat_source, stateset, material)
-        #else:
-            #self.createStateSetShaderNodeUserData(mat_source, material)
-
-    # Disabled JSON material export
-    #def createStateSetShaderNodeJSON(self, mat_source, stateset, material):
-        #"""
-        #Serializes a blender shadernode into a JSON object
-        #"""
-        #source_tree = mat_source.node_tree
-
-        #def createSocket(source_socket):
-            #socket = {
-                #"name": source_socket.name,
-                #"type": source_socket.type,
-                #"enabled": source_socket.enabled,
-                #"links": []
-            #}
-            #for source_link in source_socket.links:
-                #socket['links'].append({
-                    #"from_node": source_link.from_node.name,
-                    #"from_socket": source_link.from_socket.name,
-                    #"to_node": source_link.to_node.name,
-                    #"to_socket": source_link.to_socket.name
-                #})
-
-            #if hasattr(source_socket, 'default_value'):
-                #value = source_socket.default_value
-                #if isinstance(value, Vector) or str(type(value)) \
-                   #in ["<class 'bpy_prop_array'>", "<class 'mathutils.Color'>"]:
-                    #socket['default_value'] = [v for v in value]
-                #else:
-                    #socket['default_value'] = value
-
-            #return socket
-
-        #tree = {
-            #"nodes": {}
-        #}
-        #texture_slot_id = 0
-        #for source_node in source_tree.nodes:
-            #node = {
-                #"name": source_node.name,
-                #"type": source_node.type,
-                #"inputs": [createSocket(source_input) for source_input in source_node.inputs],
-                #"outputs": [createSocket(source_output) for source_output in source_node.outputs]
-            #}
-
-            #if source_node.type == "TEX_IMAGE" and source_node.image is not None:
-                #node["texture_mapping"] = {
-                    #"mapping": source_node.texture_mapping.mapping
-                #}
-                #node["image"] = {
-                    #"filepath_raw": source_node.image.filepath_raw,
-                    #"use_alpha": source_node.image.use_alpha,
-                    #"colorspace": source_node.image.colorspace_settings.name,
-                    #"channels": source_node.image.channels
-                #}
-                #node["texture_slot"] = texture_slot_id
-
-                #texture = self.createTexture2DFromNode(source_node)
-                #stateset.texture_attributes.setdefault(texture_slot_id, []).append(texture)
-                #texture_slot_id += 1
-
-            #tree['nodes'][source_node.name] = node
-
-        #safely delete unused nodes
-        #nodes = tree['nodes']
-        #for name in list(nodes.keys()):
-            #node = nodes[name]
-            #if all(map(lambda socket: len(socket['links']) == 0, node['inputs'])) and \
-               #all(map(lambda socket: len(socket['links']) == 0, node['outputs'])):
-                #del nodes[name]
-
-        #material.getOrCreateUserData().append(StringValueObject("NodeTree", json.dumps(tree)))
-
-    #def createStateSetShaderNodeUserData(self, mat_source, material): # NODE STUFF REGULAR (DISABLED)
-        #"""
-        #reads a shadernode to a basic material
-        #"""
-        #userData = material.getOrCreateUserData()
-        #for node in mat_source.node_tree.nodes:
-            #if node.type == "BSDF_DIFFUSE":
-                #if not node.inputs["Color"].is_linked:
-                    #value = node.inputs["Color"].default_value
-                    #userData.append(StringValueObject("DiffuseColor",
-                                                      #"[{}, {}, {}]".format(value[0],
-                                                                            #value[1],
-                                                                            #value[2])))
-            #elif node.type == "BSDF_GLOSSY":
-                #if not node.inputs["Color"].is_linked:
-                    #value = node.inputs["Color"].default_value
-                    #userData.append(StringValueObject("SpecularColor",
-                                                      #"[{}, {}, {}]".format(value[0],
-                                                                            #value[1],
-                                                                            #value[2])))
 
     def createStateSetMaterial(self, mat_source, stateset, material):
         """
@@ -1284,20 +1151,8 @@ class BlenderObjectToGeometry(object):
             material.emission = (0.0, 0.0, 0.0, 1.0)       
             material.shininess = 0
 
-        # if alpha not 1 then we set the blending mode on
-        #if DEBUG:
-            #Log("state material alpha {}".format(alpha))
-        #if alpha != 1.0:
-        #    stateset.modes["GL_BLEND"] = "ON"
-
         material_data = self.createStateSetMaterialData(mat_source, stateset)
         self.createStateSetMaterialUserData(material_data, stateset, material)
-        
-        # Disabled JSON material export
-        #if self.config.json_materials:
-            #self.createStateSetMaterialJson(material_data, stateset)
-        #else:
-            #self.createStateSetMaterialUserData(material_data, stateset, material)
 
         return stateset
 
@@ -1306,14 +1161,6 @@ class BlenderObjectToGeometry(object):
         Reads a blender material into an osg stateset/material json userdata
         Writes the separate osg::StringValueObject entries of a material for each item included below
         """
-        
-        #def premultAlpha(slot, data):
-            #if slot.texture and slot.texture.image:
-                #data["UsePremultiplyAlpha"] = slot.texture.image.alpha_mode == 'PREMULT'
-
-        #def useAlpha(slot, data):
-            #if slot.texture and slot.texture.use_alpha:
-                #data["UseAlpha"] = True
                 
         data = {}
         shader = None
@@ -1418,23 +1265,9 @@ class BlenderObjectToGeometry(object):
                 data_texture_slot = data["TextureSlots"].setdefault(i, {})
                 data_texture_slot["BlendType"] = "MIX"
                 stateset.texture_attributes.setdefault(0, []).append(texture)
-                data_texture_slot["DiffuseColor"] = 1.0       
-
-        #try:
-            #if t.source_image.getDepth() > 24:  # there is an alpha
-                #stateset.modes["GL_BLEND"] = "ON"
-        #except:
-            #pass
+                data_texture_slot["DiffuseColor"] = 1.0
 
         return data
-    
-    # Disabled JSON material export
-    #def createStateSetMaterialJson(self, data, stateset):
-        """
-        Serialize blender material data into stateset as a JSON user data
-        """
-        #stateset.getOrCreateUserData().append(StringValueObject("BlenderMaterial",
-                                                                #json.dumps(data)))
 
     def createStateSetMaterialUserData(self, data, stateset, material):
         """
