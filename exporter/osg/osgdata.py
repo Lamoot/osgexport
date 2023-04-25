@@ -612,7 +612,8 @@ class Export(object):
         self.root = Group()
         self.root.setName("Root")
         self.root.children = self.items
-        self.root.getOrCreateUserData().append(StringValueObject("source", "blender"))
+        # CUSTOM USER DATA - scene roon node
+        #self.root.getOrCreateUserData().append(StringValueObject("source", "blender"))
         if len(self.animations) > 0:
             animation_manager = BasicAnimationManager()
             animation_manager.animations = self.animations
@@ -881,8 +882,9 @@ class BlenderLightToLightSource(object):
 
         osg_light.specular = (energy, energy, energy, 1.0)  # osg_light.diffuse
         osg_light.specular = (0, 0, 0, 1.0)
-
-        osg_light.getOrCreateUserData().append(StringValueObject("source", "blender"))
+        
+        # CUSTOM USER DATA - light
+        # osg_light.getOrCreateUserData().append(StringValueObject("source", "blender")) # User data - light
         osg_light.getOrCreateUserData().append(StringValueObject("Energy", str(energy)))
         osg_light.getOrCreateUserData().append(StringValueObject("Color", "[{}, {}, {}]".format(self.light.color[0],
                                                                                             self.light.color[1],
@@ -1087,7 +1089,8 @@ class BlenderObjectToGeometry(object):
         for osg_object in (stateset, material):
             osg_object.dataVariance = "STATIC"
             osg_object.setName(mat_source.name)
-            osg_object.getOrCreateUserData().append(StringValueObject("source", "blender"))
+            # CUSTOM USER DATA - stateset
+            # osg_object.getOrCreateUserData().append(StringValueObject("source", "blender"))
         
         self.createStateSetMaterial(mat_source, stateset, material)
         
@@ -1215,7 +1218,7 @@ class BlenderObjectToGeometry(object):
         anim = createAnimationMaterialAndSetCallback(material, mat_source, self.config, self.unique_objects)
         if anim:
             for osg_object in (stateset, material):
-                stateset.dataVariance = "DYNAMIC";
+                stateset.dataVariance = "DYNAMIC"
             self.material_animations[anim.name] = anim
         
         shader = None
@@ -1446,20 +1449,21 @@ class BlenderObjectToGeometry(object):
             elif isinstance(value, str):
                 return value
             return None
-
-        userData = material.getOrCreateUserData()
-
-        for key, value in data.items():
-            userdata = toUserData(value)
-            if userdata is not None:
-                userData.append(StringValueObject(key, userdata))
+        
+        # CUSTOM USER DATA - material
+        #userData = material.getOrCreateUserData()
+        #for key, value in data.items():
+        #    userdata = toUserData(value)
+        #    if userdata is not None:
+        #        userData.append(StringValueObject(key, userdata))
 
         slot_name = lambda index, label: "{:02}_{}".format(index, label)
         
-        userData = stateset.getOrCreateUserData()
-        for index, slot in data["TextureSlots"].items():
-            for key, value in slot.items():
-                userData.append(StringValueObject(slot_name(index, key), toUserData(value)))
+        # CUSTOM USER DATA - texture
+        #userData = stateset.getOrCreateUserData()
+        #for index, slot in data["TextureSlots"].items():
+        #    for key, value in slot.items():
+        #        userData.append(StringValueObject(slot_name(index, key), toUserData(value)))
 
     def parseMorphTargets(self, obj, geometry, morph_vertex_map, material_index):
         ''' Create morph targets '''
