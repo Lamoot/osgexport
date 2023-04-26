@@ -817,6 +817,50 @@ class Material(StateAttribute):
                                                                           STRFLT(self.shininess))))
 
 
+class BlendFunc(StateAttribute):
+    def __init__(self, *args, **kwargs):
+        StateAttribute.__init__(self, *args, **kwargs)
+        self.source_rgb = "SRC_ALPHA"
+        self.source_alpha = "SRC_ALPHA"
+        self.destination_rgb = "ONE_MINUS_SRC_ALPHA"
+        self.destination_alpha = "ONE_MINUS_SRC_ALPHA"
+    
+    def className(self):
+        return "BlendFunc"
+
+    def serialize(self, output):
+        output.write(self.encode("$%s {\n" % (self.getNameSpaceClass())))
+        self.serializeContent(output)
+        output.write(self.encode("$}\n"))
+
+    def serializeContent(self, output):
+        StateAttribute.serializeContent(self, output)
+        output.write(self.encode("$#SourceRGB %s\n" % self.source_rgb)) 
+        output.write(self.encode("$#SourceAlpha %s\n" % self.source_alpha)) 
+        output.write(self.encode("$#DestinationRGB %s\n" % self.destination_rgb)) 
+        output.write(self.encode("$#DestinationAlpha %s\n" % self.destination_alpha))
+
+
+class AlphaFunc(StateAttribute):
+    def __init__(self, *args, **kwargs):
+        StateAttribute.__init__(self, *args, **kwargs)
+        self.function = "GEQUAL"
+        self.reference_value = 0.5
+    
+    def className(self):
+        return "AlphaFunc"
+
+    def serialize(self, output):
+        output.write(self.encode("$%s {\n" % (self.getNameSpaceClass())))
+        self.serializeContent(output)
+        output.write(self.encode("$}\n"))
+
+    def serializeContent(self, output):
+        StateAttribute.serializeContent(self, output)
+        output.write(self.encode("$#Function %s\n" % self.function)) 
+        output.write(self.encode("$#ReferenceValue %s\n" % self.reference_value)) 
+
+
 class LightModel(StateAttribute):
     def __init__(self, *args, **kwargs):
         StateAttribute.__init__(self, *args, **kwargs)
@@ -878,6 +922,7 @@ class StateSet(Object):
             output.write(self.encode("$#}\n"))
 
         if len(self.attributes) > 0:
+            print("yo we got yo" + str(self.attributes))
             output.write(self.encode("$#AttributeList %d {\n" % (len(self.attributes))))
             for i in self.attributes:
                 if i is not None:

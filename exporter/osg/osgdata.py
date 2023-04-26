@@ -1055,11 +1055,25 @@ class BlenderObjectToGeometry(object):
 
         if mat_source is None:
             return None
-
+        
+        # Stateset
         stateset = StateSet()
         self.unique_objects.registerStateSet(mat_source, stateset)
+        
+        # Material attribute
         material = Material()
         stateset.attributes.append(material)
+        
+        # Blend function attribute
+        blend_function = BlendFunc()
+        blend_function.dataVariance = "STATIC"
+        stateset.attributes.append(blend_function)
+        
+        # Alpha function attribute
+        if mat_source.blend_method == "CLIP":
+            alpha_function = AlphaFunc()
+            alpha_function.dataVariance = "STATIC"
+            stateset.attributes.append(alpha_function)
 
         # Setting dataVariance to Static since material animation is not supported
         for osg_object in (stateset, material):
@@ -1068,11 +1082,11 @@ class BlenderObjectToGeometry(object):
             # CUSTOM USER DATA - stateset
             # osg_object.getOrCreateUserData().append(StringValueObject("source", "blender"))
         
-        self.createStateSetMaterial(mat_source, stateset, material)
+        self.createStateSetMaterial(mat_source, stateset)
 
         return stateset
 
-    def createStateSetMaterial(self, mat_source, stateset, material):
+    def createStateSetMaterial(self, mat_source, stateset):
         """
         Reads a blender material into an osg stateset/material        
         Writes the following section (with values) of a material
@@ -1082,11 +1096,14 @@ class BlenderObjectToGeometry(object):
             Emission TRUE Front Back
             Shininess TRUE Front Back
         """
+        material = stateset.attributes[0]
+        blend_function = stateset.attributes[1]
+        
         anim = createAnimationMaterialAndSetCallback(material, mat_source, self.config, self.unique_objects)
         if anim:
             for osg_object in (stateset, material):
                 stateset.dataVariance = "DYNAMIC"
-            self.material_animations[anim.name] = anim
+            self.material_animations[anim.name] = anim        
         
         shader = None
         if not mat_source.node_tree.nodes:
@@ -1098,22 +1115,30 @@ class BlenderObjectToGeometry(object):
                     break        
          
         if shader is None:
+            stateset.modes["GL_BLEND"] = "OFF"
+            stateset.modes["GL_CULL_FACE"] = "OFF"
             material.diffuse = (1.0, 1.0, 1.0, 1.0)      
             material.ambient = (0.0, 0.0, 0.0, 1.0)
             material.specular = (1.0, 1.0, 1.0, 1.0)
             material.emission = (0.0, 0.0, 0.0, 1.0)       
             material.shininess = 12.5
         elif shader.type == "EEVEE_SPECULAR":
-            alpha = 1 - shader.inputs[4].default_value
-            if mat_source.blend_method != 'OPAQUE':
+            # ModeList
+            if mat_source.blend_method == 'BLEND':
                 stateset.modes["GL_BLEND"] = "ON"
+                alpha = 1 - shader.inputs[4].default_value
+            elif mat_source.blend_method == 'CLIP':
+                stateset.modes["GL_BLEND"] = "OFF"
+                alpha = 1.0
             else:
                 stateset.modes["GL_BLEND"] = "OFF"
+                alpha = 1.0            
             if mat_source.use_backface_culling:
                 stateset.modes["GL_CULL_FACE"] = "FRONT"
             else:
                 stateset.modes["GL_CULL_FACE"] = "OFF"
-            stateset.modes["GL_LIGHTING"] = "ON"
+            
+            # Material
             material.diffuse = (shader.inputs[0].default_value[0],
                                 shader.inputs[0].default_value[1],
                                 shader.inputs[0].default_value[2],
@@ -1131,29 +1156,37 @@ class BlenderObjectToGeometry(object):
                                  shader.inputs[3].default_value[2],
                                  1.0)        
             material.shininess = ((1 - shader.inputs[2].default_value) * 100 / 512 ) * 128    
+        
         elif shader.type == "EMISSION":
-            alpha = 1.0
-            if mat_source.blend_method != 'OPAQUE':
+            # ModeList
+            if mat_source.blend_method == 'BLEND':
                 stateset.modes["GL_BLEND"] = "ON"
+                alpha = min(shader.inputs[1].default_value, 1.0)
             else:
                 stateset.modes["GL_BLEND"] = "OFF"
+                alpha = 1.0
             if mat_source.use_backface_culling:
                 stateset.modes["GL_CULL_FACE"] = "FRONT"
             else:
                 stateset.modes["GL_CULL_FACE"] = "OFF"
-            stateset.modes["GL_LIGHTING"] = "OFF"
-            material.diffuse = (shader.inputs[0].default_value[0],
+            
+            # Material
+            material.diffuse = (0.0, 0.0, 0.0, alpha)       
+            material.ambient = (0.0, 0.0, 0.0, 0.0)
+            material.specular = (0.0, 0.0, 0.0, 0.0)
+            material.emission = (shader.inputs[0].default_value[0],
                                 shader.inputs[0].default_value[1],
                                 shader.inputs[0].default_value[2],
                                 1.0)        
-            material.ambient = (0.0, 0.0, 0.0, 1.0)
-            material.specular = (0.0, 0.0, 0.0, 1.0)
-            material.emission = (0.0, 0.0, 0.0, 1.0)       
             material.shininess = 0
+            
+            # BlendFunc
+            blend_function.destination_rgb = "ONE"
+            blend_function.destination_alpha = "ONE"    
 
         material_data = self.createStateSetMaterialData(mat_source, stateset)
         self.createStateSetMaterialUserData(material_data, stateset, material)
-
+        
         return stateset
 
     def createStateSetMaterialData(self, mat_source, stateset):
@@ -1178,7 +1211,7 @@ class BlenderObjectToGeometry(object):
                 if node.type == "EEVEE_SPECULAR" or node.type == "EMISSION":
                     shader = node
                     break
-        
+
         # Shader basic properties
         if shader is None:
             data["DiffuseIntensity"] = 1.0        
