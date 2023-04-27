@@ -922,7 +922,6 @@ class StateSet(Object):
             output.write(self.encode("$#}\n"))
 
         if len(self.attributes) > 0:
-            print("yo we got yo" + str(self.attributes))
             output.write(self.encode("$#AttributeList %d {\n" % (len(self.attributes))))
             for i in self.attributes:
                 if i is not None:
