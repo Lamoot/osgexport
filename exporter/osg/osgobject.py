@@ -943,17 +943,17 @@ class StateSet(Object):
                     output.write(self.encode("$##Data 0\n"))
             output.write(self.encode("$#}\n"))
 
-            output.write(self.encode("$#TextureAttributeList %d {\n" % (1 + max_texture_used)))
+            output.write(self.encode("$#TextureAttributeList %d {\n" % len(self.texture_attributes[0])))
             for i in range(0, max_texture_used + 1):
                 if i in self.texture_attributes:
-                    attributes = self.texture_attributes.get(i)
-                    output.write(self.encode("$##Data %d {\n" % len(attributes)))
-                    for a in attributes:
+                    texture_attributes = self.texture_attributes.get(i)
+                    for a in texture_attributes:
                         if a is not None:
+                            output.write(self.encode("$##Data 1 {\n"))
                             a.indent_level = self.indent_level + 3
                             a.write(output)
                         output.write(self.encode("$###Value OFF\n"))
-                    output.write(self.encode("$##}\n"))
+                        output.write(self.encode("$##}\n"))
                 else:
                     output.write(self.encode("$##Data 0\n"))
             output.write(self.encode("$#}\n"))

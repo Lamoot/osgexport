@@ -1191,17 +1191,15 @@ class BlenderObjectToGeometry(object):
 
     def createStateSetMaterialData(self, mat_source, stateset):
         """
-        Reads a blender material into an osg stateset/material json userdata
-        Writes the separate osg::StringValueObject entries of a material for each item included below
-        """
-                
+        Reads a blender material into an osg stateset/material json userdata.
+        Handles custom material user data and textures.
+        """                
         data = {}
         shader = None
         
         # Let's check whether we are using the correct shader node to access its data
-        # otherwise fall back to a generic material. We assume users are careful enough
-        # to only include a single shader node in the material node graph as we don't
-        # support anything else anyway.
+        # We assume users are careful enough to only include a single shader node in
+        # the material node graph as we don't support anything else anyway.
         if not mat_source.node_tree:
             pass
         if not mat_source.node_tree.nodes:
@@ -1211,94 +1209,67 @@ class BlenderObjectToGeometry(object):
                 if node.type == "EEVEE_SPECULAR" or node.type == "EMISSION":
                     shader = node
                     break
-
-        # Shader basic properties
-        if shader is None:
-            data["DiffuseIntensity"] = 1.0        
-            data["DiffuseColor"] = [1.0, 1.0, 1.0]
-            data["SpecularIntensity"] = 0.5
-            data["SpecularColor"] = [0.5, 0.5, 0.5]        
-            data["SpecularHardness"] = 50
-            data["Shadeless"] = False
-            data["Emit"] = 0.0
-            data["Ambient"] = 0.0
-            data["Translucency"] = 0.0
-            data["DiffuseShader"] = "LAMBERT"
-            data["SpecularShader"] = "COOKTORR"
-            data["TextureSlots"] = {}
         
-        elif shader.type == "EEVEE_SPECULAR":
-            data["DiffuseIntensity"] = 1.0
-            data["DiffuseColor"] = shader.inputs[0].default_value[:3]
-            data["SpecularIntensity"] = 1.0
-            data["SpecularColor"] = shader.inputs[1].default_value[:3]
-            data["SpecularHardness"] = (1 - shader.inputs[2].default_value) * 100
-            data["Shadeless"] = False
-            data["Emit"] = shader.inputs[3].default_value[:3]
-            data["Ambient"] = bpy.context.scene.world.color
-            data["Translucency"] = 0.0
-            data["DiffuseShader"] = "LAMBERT"
-            data["SpecularShader"] = "COOKTORR"
-            data["TextureSlots"] = {}
-            # We're only writing a single diffuse texture that's required by OpenMW,
-            # but the logic is from a more general system that was already present in
-            # the exporter and works with the rest of the code.
-            texture_list = []
-            for node in mat_source.node_tree.nodes:
-                if node.type != "TEX_IMAGE":
-                    continue
-                elif not node.image:
-                    continue
-                elif shader.inputs[0].links:
-                    if shader.inputs[0].links[0].from_node == node:
-                        texture_list.append(node)
-            
-            for i, texture_node in enumerate(texture_list):
-                if texture_node is None:
-                    continue
-                texture = self.createTexture2DFromNode(texture_node)
-                texture.name = "DiffuseMap"
-                data_texture_slot = data["TextureSlots"].setdefault(i, {})
-                data_texture_slot["BlendType"] = "MIX"
-                stateset.texture_attributes.setdefault(0, []).append(texture)
-                data_texture_slot["DiffuseColor"] = 1.0
-
+        data["TextureSlots"] = {}
+        texture_list = []        
+        
+        if shader is not None:
+            for input in shader.inputs:
+                if input.links:
+                    if input.links[0].from_node.type != "TEX_IMAGE":
+                        continue
+                    elif not input.links[0].from_node.image:
+                        continue
+                    else:
+                        texture_list.append(input.links[0].from_node)
+        
+            if shader.type == "EEVEE_SPECULAR":
+                for i, texture_node in enumerate(texture_list):
+                    if texture_node is None:
+                        continue
+                    texture = self.createTexture2DFromNode(texture_node)
                     
-        elif shader.type == "EMISSION":
-            data["DiffuseIntensity"] = 1.0
-            data["DiffuseColor"] = shader.inputs[0].default_value[:3]
-            data["SpecularIntensity"] = 1.0
-            data["SpecularColor"] = (1.0, 1.0, 1.0, 1.0)
-            data["SpecularHardness"] = 50
-            data["Shadeless"] = True
-            data["Emit"] = 0.0
-            data["Ambient"] = 0.0
-            data["Translucency"] = 0.0
-            data["DiffuseShader"] = "LAMBERT"
-            data["SpecularShader"] = "COOKTORR"
-            data["TextureSlots"] = {}
-            # We're only writing a single diffuse texture that's required by OpenMW,
-            # but the logic is from a more general system that was already present in
-            # the exporter and works with the rest of the code.
-            texture_list = []
-            for node in mat_source.node_tree.nodes:
-                if node.type != "TEX_IMAGE":
-                    continue
-                elif not node.image:
-                    continue
-                elif shader.inputs[0].links:
-                    if shader.inputs[0].links[0].from_node == node:
-                        texture_list.append(node)
-            
-            for i, texture_node in enumerate(texture_list):
-                if texture_node is None:
-                    continue
-                texture = self.createTexture2DFromNode(texture_node)
-                texture.name = "DiffuseMap"
-                data_texture_slot = data["TextureSlots"].setdefault(i, {})
-                data_texture_slot["BlendType"] = "MIX"
-                stateset.texture_attributes.setdefault(0, []).append(texture)
-                data_texture_slot["DiffuseColor"] = 1.0
+                    # Name the texture so it's recognized by OpenMW
+                    if shader.inputs["Base Color"].links:
+                        if shader.inputs["Base Color"].links[0].from_node == texture_node:
+                            texture.name = "diffuseMap"
+                    if shader.inputs["Specular"].links:
+                        if shader.inputs["Specular"].links[0].from_node == texture_node:
+                            texture.name = "specularMap"
+                    if shader.inputs["Emissive Color"].links:
+                        if shader.inputs["Emissive Color"].links[0].from_node == texture_node:
+                            texture.name = "emissiveMap"
+                    if shader.inputs["Normal"].links:
+                        if shader.inputs["Normal"].links[0].from_node == texture_node:
+                            texture.name = "normalMap"                                    
+                    data_texture_slot = data["TextureSlots"].setdefault(i, {})
+                    data_texture_slot["BlendType"] = "MIX"
+                    stateset.texture_attributes.setdefault(0, []).append(texture)
+                    data_texture_slot["DiffuseColor"] = 1.0
+                        
+            elif shader.type == "EMISSION":
+                for i, texture_node in enumerate(texture_list):
+                    if texture_node is None:
+                        continue
+                    texture = self.createTexture2DFromNode(texture_node)
+                    texture.name = "DiffuseMap"
+                    data_texture_slot = data["TextureSlots"].setdefault(i, {})
+                    data_texture_slot["BlendType"] = "MIX"
+                    stateset.texture_attributes.setdefault(0, []).append(texture)
+                    data_texture_slot["DiffuseColor"] = 1.0
+        
+        # CUSTOM USER DATA - material
+        #data["DiffuseIntensity"] = 1.0
+        #data["DiffuseColor"] = shader.inputs[0].default_value[:3]
+        #data["SpecularIntensity"] = 1.0
+        #data["SpecularColor"] = (1.0, 1.0, 1.0, 1.0)
+        #data["SpecularHardness"] = 50
+        #data["Shadeless"] = True
+        #data["Emit"] = 0.0
+        #data["Ambient"] = 0.0
+        #data["Translucency"] = 0.0
+        #data["DiffuseShader"] = "LAMBERT"
+        #data["SpecularShader"] = "COOKTORR"
 
         return data
 
