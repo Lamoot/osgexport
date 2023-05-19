@@ -945,7 +945,7 @@ class StateSet(Object):
             output.write(self.encode("$#TextureAttributeList %d {\n" % len(self.texture_attributes[0])))
             for i in range(0, max_texture_used + 1):
                 if i in self.texture_attributes:
-                    texture_attributes = self.texture_attributes.get(i)
+                    texture_attributes = self.texture_attributes.get(i, [])
                     for a in texture_attributes:
                         if a is not None:
                             output.write(self.encode("$##Data 1 {\n"))
