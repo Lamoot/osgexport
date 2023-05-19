@@ -612,8 +612,6 @@ class Export(object):
         self.root = Group()
         self.root.setName("Root")
         self.root.children = self.items
-        # CUSTOM USER DATA - scene roon node
-        #self.root.getOrCreateUserData().append(StringValueObject("source", "blender"))
         if len(self.animations) > 0:
             animation_manager = BasicAnimationManager()
             animation_manager.animations = self.animations
@@ -883,8 +881,6 @@ class BlenderLightToLightSource(object):
         osg_light.specular = (energy, energy, energy, 1.0)  # osg_light.diffuse
         osg_light.specular = (0, 0, 0, 1.0)
         
-        # CUSTOM USER DATA - light
-        # osg_light.getOrCreateUserData().append(StringValueObject("source", "blender")) # User data - light
         osg_light.getOrCreateUserData().append(StringValueObject("Energy", str(energy)))
         osg_light.getOrCreateUserData().append(StringValueObject("Color", "[{}, {}, {}]".format(self.light.color[0],
                                                                                             self.light.color[1],
@@ -1079,8 +1075,6 @@ class BlenderObjectToGeometry(object):
         for osg_object in (stateset, material):
             osg_object.dataVariance = "STATIC"
             osg_object.setName(mat_source.name)
-            # CUSTOM USER DATA - stateset
-            # osg_object.getOrCreateUserData().append(StringValueObject("source", "blender"))
         
         self.createStateSetMaterial(mat_source, stateset)
 
@@ -1257,19 +1251,6 @@ class BlenderObjectToGeometry(object):
                     data_texture_slot["BlendType"] = "MIX"
                     stateset.texture_attributes.setdefault(0, []).append(texture)
                     data_texture_slot["DiffuseColor"] = 1.0
-        
-        # CUSTOM USER DATA - material
-        #data["DiffuseIntensity"] = 1.0
-        #data["DiffuseColor"] = shader.inputs[0].default_value[:3]
-        #data["SpecularIntensity"] = 1.0
-        #data["SpecularColor"] = (1.0, 1.0, 1.0, 1.0)
-        #data["SpecularHardness"] = 50
-        #data["Shadeless"] = True
-        #data["Emit"] = 0.0
-        #data["Ambient"] = 0.0
-        #data["Translucency"] = 0.0
-        #data["DiffuseShader"] = "LAMBERT"
-        #data["SpecularShader"] = "COOKTORR"
 
         return data
 
@@ -1286,21 +1267,8 @@ class BlenderObjectToGeometry(object):
             elif isinstance(value, str):
                 return value
             return None
-        
-        # CUSTOM USER DATA - material
-        #userData = material.getOrCreateUserData()
-        #for key, value in data.items():
-        #    userdata = toUserData(value)
-        #    if userdata is not None:
-        #        userData.append(StringValueObject(key, userdata))
 
         slot_name = lambda index, label: "{:02}_{}".format(index, label)
-        
-        # CUSTOM USER DATA - texture
-        #userData = stateset.getOrCreateUserData()
-        #for index, slot in data["TextureSlots"].items():
-        #    for key, value in slot.items():
-        #        userData.append(StringValueObject(slot_name(index, key), toUserData(value)))
 
     def parseMorphTargets(self, obj, geometry, morph_vertex_map, material_index):
         ''' Create morph targets '''
