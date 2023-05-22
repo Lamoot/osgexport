@@ -625,7 +625,7 @@ classes = (
     OSGT_PT_export_transform,
     OSGT_PT_export_geometry,
     #OSGT_PT_export_material,
-    #OSGT_PT_export_animation,
+    OSGT_PT_export_animation,
     OSGT_PT_export_extra,
     OSGT_PT_export_postprocess,
 )

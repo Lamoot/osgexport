@@ -1204,7 +1204,7 @@ class Bone(MatrixTransform):
             else:
                 parent_matrix = self.bone.parent.matrix_local.copy()
             # This matrix is not always invertible
-            bone_matrix = parent_matrix.inverted_safe() * bone_matrix
+            bone_matrix = parent_matrix.inverted_safe() @ bone_matrix
 
         # add bind matrix in localspace callback
         update_callback.stacked_transforms.append(StackedMatrixElement(name="bindmatrix", matrix=bone_matrix))
