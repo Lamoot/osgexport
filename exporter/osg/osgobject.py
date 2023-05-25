@@ -1198,8 +1198,6 @@ class Bone(MatrixTransform):
         else:
             bone_matrix = self.bone.matrix_local.copy()        
         
-        # When scaling the exported result, we want to multiply only bone's location values
-        bone_matrix.translation *= scale_factor
 
         if self.parent:
             if use_pose:
@@ -1209,6 +1207,9 @@ class Bone(MatrixTransform):
             # This matrix is not always invertible
             bone_matrix = parent_matrix.inverted_safe() @ bone_matrix
 
+        # When scaling the exported result, we want to multiply only bone's location values
+        bone_matrix.translation *= scale_factor
+        
         # add bind matrix in localspace callback
         update_callback.stacked_transforms.append(StackedMatrixElement(name="bindmatrix", matrix=bone_matrix))
         update_callback.stacked_transforms.append(StackedTranslateElement())
