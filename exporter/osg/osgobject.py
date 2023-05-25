@@ -1183,7 +1183,7 @@ class Bone(MatrixTransform):
         # self.inverse_bind_matrix = Matrix().to_4x4().identity()
         self.bone_inv_bind_matrix_skeleton = Matrix().to_4x4()
 
-    def buildBoneChildren(self, use_pose=False):
+    def buildBoneChildren(self, use_pose=False, scale_factor=1.0):
         if self.skeleton is None or self.bone is None:
             return
 
@@ -1196,7 +1196,10 @@ class Bone(MatrixTransform):
         if use_pose:
             bone_matrix = self.skeleton.pose.bones[self.bone.name].matrix.copy()
         else:
-            bone_matrix = self.bone.matrix_local.copy()
+            bone_matrix = self.bone.matrix_local.copy()        
+        
+        # When scaling the exported result, we want to multiply only bone's location values
+        bone_matrix.translation *= scale_factor
 
         if self.parent:
             if use_pose:
@@ -1213,13 +1216,15 @@ class Bone(MatrixTransform):
         update_callback.stacked_transforms.append(StackedScaleElement())
 
         self.bone_inv_bind_matrix_skeleton = self.bone.matrix_local.copy().inverted()
+        self.bone_inv_bind_matrix_skeleton.translation *= scale_factor
+        
         if not self.bone.children:
             return
 
         for boneChild in self.bone.children:
             b = Bone(self.skeleton, boneChild, self)
             self.children.append(b)
-            b.buildBoneChildren(use_pose)
+            b.buildBoneChildren(use_pose, scale_factor)
 
     def getMatrixInArmatureSpace(self):
         return self.bone.matrix_local

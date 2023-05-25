@@ -92,14 +92,6 @@ def findBoneInHierarchy(scene, bonename):
     return None
 
 
-def getRootBonesList(armature):
-    bones = []
-    for bone in armature.bones:
-        if bone.parent is None:
-            bones.append(bone)
-    return bones
-
-
 def truncateFloat(value, digit=5):
     if math.isnan(value):
         return 0

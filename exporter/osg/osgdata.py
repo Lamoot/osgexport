@@ -390,8 +390,7 @@ class Export(object):
                 original_pose_position = armature.data.pose_position
                 armature.data.pose_position = 'REST'
 
-                boneInWorldSpace = armature.matrix_world \
-                    * armature.pose.bones[blender_object.parent_bone].matrix
+                boneInWorldSpace = armature.matrix_world @ armature.pose.bones[blender_object.parent_bone].matrix
 
                 matrix = getDeltaMatrixFromMatrix(boneInWorldSpace, blender_object.matrix_world)
 
@@ -455,13 +454,17 @@ class Export(object):
         if use_pose and blender_object in self.rest_armatures:
             setArmaturesPosePosition(self.config.scene, 'POSE', [blender_object])
 
-        roots = getRootBonesList(blender_object.data)
-
         matrix = getDeltaMatrixFrom(blender_object.parent, blender_object)
         skeleton = Skeleton(blender_object.name, matrix)
-        for bone in roots:
+        
+        root_bones = []
+        for bone in blender_object.data.bones:
+            if bone.parent is None:
+                root_bones.append(bone)
+        
+        for bone in root_bones:
             b = Bone(blender_object, bone)
-            b.buildBoneChildren(use_pose=use_pose)
+            b.buildBoneChildren(use_pose=use_pose, scale_factor=self.config.scale_factor)
             skeleton.children.append(b)
         skeleton.collectBones()
 
@@ -1759,7 +1762,11 @@ class BlenderAnimationToAnimation(object):
 
             value = [realtime]
             for fcurve in fcurves:
-                value.append(fcurve.evaluate(time))
+                if fcurve.data_path == "location":
+                    # When scaling the exported result, we want to multiply only object's location values
+                    value.append(fcurve.evaluate(time) * self.config.scale_factor)
+                else:
+                    value.append(fcurve.evaluate(time))
             channel.keys.append(value)
 
         return channel
