@@ -1762,7 +1762,7 @@ class BlenderAnimationToAnimation(object):
 
             value = [realtime]
             for fcurve in fcurves:
-                if fcurve.data_path == "location":
+                if fcurve.data_path.endswith("location"):
                     # When scaling the exported result, we want to multiply only object's location values
                     value.append(fcurve.evaluate(time) * self.config.scale_factor)
                 else:
