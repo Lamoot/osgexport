@@ -186,7 +186,7 @@ def bakeAction(blender_object,
             pbone.bone.use_inherit_rotation = True
             if do_visual_keying:
                 # Get the final transform of the bone in its own local space...
-                matrix[name] = blender_object.convert_space(pbone, pbone.matrix, 'POSE', 'LOCAL')
+                matrix[name] = blender_object.convert_space(pose_bone=pbone, matrix=pbone.matrix, from_space='POSE', to_space='LOCAL')
             else:
                 matrix[name] = pbone.matrix_basis.copy()
 
@@ -226,7 +226,7 @@ def bakeAction(blender_object,
     pose_info = []
     obj_info = []
 
-    options = {'INSERTKEY_NEEDED'}
+    key_options = {'INSERTKEY_NEEDED'}
 
     frame_range = range(frame_start, frame_end + 1, frame_step)
 
@@ -273,13 +273,13 @@ def bakeAction(blender_object,
             for (f, matrix) in zip(frame_range, pose_info):
                 pbone.matrix_basis = matrix[name].copy()
 
-                pbone.keyframe_insert("location", -1, f, name, options)
+                pbone.keyframe_insert("location", index=-1, frame=f, group=name, options=key_options)
 
                 rotation_mode = pbone.rotation_mode
                 if rotation_mode == 'QUATERNION':
-                    pbone.keyframe_insert("rotation_quaternion", -1, f, name, options)
+                    pbone.keyframe_insert("rotation_quaternion", index=-1, frame=f, group=name, options=key_options)
                 elif rotation_mode == 'AXIS_ANGLE':
-                    pbone.keyframe_insert("rotation_axis_angle", -1, f, name, options)
+                    pbone.keyframe_insert("rotation_axis_angle", index=-1, frame=f, group=name, options=key_options)
                 else:  # euler, XYZ, ZXY etc
                     if euler_prev is not None:
                         euler = pbone.rotation_euler.copy()
@@ -289,9 +289,9 @@ def bakeAction(blender_object,
                         del euler
                     else:
                         euler_prev = pbone.rotation_euler.copy()
-                    pbone.keyframe_insert("rotation_euler", -1, f, name, options)
+                    pbone.keyframe_insert("rotation_euler", index=-1, frame=f, group=name, options=key_options)
 
-                pbone.keyframe_insert("scale", -1, f, name, options)
+                pbone.keyframe_insert("scale", index=-1, frame=f, group=name, options=key_options)
 
             # restore rotation mode
             pbone.rotation_mode = rotation_mode_backup
@@ -331,13 +331,13 @@ def bakeAction(blender_object,
                     # so we need to take to take bone's length into account
                     blender_object.location += bone_correction
 
-            blender_object.keyframe_insert("location", -1, f, name, options)
+            blender_object.keyframe_insert("location", index=-1, frame=f, group=name, options=key_options)
 
             rotation_mode = blender_object.rotation_mode
             if rotation_mode == 'QUATERNION':
-                blender_object.keyframe_insert("rotation_quaternion", -1, f, name, options)
+                blender_object.keyframe_insert("rotation_quaternion", index=-1, frame=f, group=name, options=key_options)
             elif rotation_mode == 'AXIS_ANGLE':
-                blender_object.keyframe_insert("rotation_axis_angle", -1, f, name, options)
+                blender_object.keyframe_insert("rotation_axis_angle", index=-1, frame=f, group=name, options=key_options)
             else:  # euler, XYZ, ZXY etc
                 if euler_prev is not None:
                     euler = blender_object.rotation_euler.copy()
@@ -347,9 +347,9 @@ def bakeAction(blender_object,
                     del euler
                 else:
                     euler_prev = blender_object.rotation_euler.copy()
-                blender_object.keyframe_insert("rotation_euler", -1, f, name, options)
+                blender_object.keyframe_insert("rotation_euler", index=-1, frame=f, group=name, options=key_options)
 
-            blender_object.keyframe_insert("scale", -1, f, name, options)
+            blender_object.keyframe_insert("scale", index=-1, frame=f, group=name, options=key_options)
 
         # restore rotation mode
         blender_object.rotation_mode = rotation_mode_backup
