@@ -242,9 +242,15 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
         )
     
     ARMATURE_REST : BoolProperty(
-        name="Export armature in REST pose",
-        description="Static armatures are exported in REST mode instead of POSE mode",
+        name="Force REST pose",
+        description="Export armatures in REST mode instead of POSE mode",
         default=False
+        )
+    
+    ARMATURE_DEFORM_ONLY : BoolProperty(
+        name="Only Deform Bones",
+        description=("Only export bones which are enabled to deform geometry"),
+        default=True,
         )
     
     OSGCONV_TO_IVE : BoolProperty(
@@ -339,6 +345,7 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
         self.BAKE_CONSTRAINTS = self.config.bake_constraints
         self.BAKE_FRAME_STEP = self.config.bake_frame_step
         self.ARMATURE_REST = self.config.arm_rest
+        self.ARMATURE_DEFORM_ONLY = self.config.arm_deform_only
         self.OSGCONV_TO_IVE = self.config.osgconv_to_ive
         self.OSGCONV_EMBED_TEXTURES = self.config.osgconv_embed_textures
         self.OSGCONV_PATH = self.config.osgconv_path
@@ -380,6 +387,7 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
         self.config.bake_constraints = self.BAKE_CONSTRAINTS
         self.config.bake_frame_step = self.BAKE_FRAME_STEP
         self.config.arm_rest = self.ARMATURE_REST
+        self.config.arm_deform_only = self.ARMATURE_DEFORM_ONLY
         self.config.osgconv_to_ive = self.OSGCONV_TO_IVE
         self.config.osgconv_path = self.OSGCONV_PATH
         self.config.run_viewer = self.RUN_VIEWER
@@ -500,6 +508,33 @@ class OSGT_PT_export_geometry(bpy.types.Panel):
         col.prop(operator, 'APPLYMODIFIERS')
 
 
+class OSGT_PT_export_armature(bpy.types.Panel):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Armature"
+    bl_parent_id = "FILE_PT_operator"
+    bl_options = {'DEFAULT_CLOSED'}
+    
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+            
+        return operator.bl_idname == "OSG_OT_export"
+    
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+        
+        sfile = context.space_data
+        operator = sfile.active_operator
+        
+        col = layout.column(align = True)
+        col.prop(operator, 'ARMATURE_DEFORM_ONLY')
+        col.prop(operator, 'ARMATURE_REST')
+
+
 class OSGT_PT_export_animation(bpy.types.Panel):
     bl_space_type = 'FILE_BROWSER'
     bl_region_type = 'TOOL_PROPS'
@@ -534,7 +569,6 @@ class OSGT_PT_export_animation(bpy.types.Panel):
         col.prop(operator, 'BAKE_ALL')
         col.prop(operator, 'BAKE_CONSTRAINTS')
         col.prop(operator, 'USE_QUATERNIONS')
-        col.prop(operator, 'ARMATURE_REST')
 
 
 class OSGT_PT_export_postprocess(bpy.types.Panel):
@@ -624,6 +658,7 @@ classes = (
     OSGT_PT_export_include,
     OSGT_PT_export_transform,
     OSGT_PT_export_geometry,
+    OSGT_PT_export_armature,
     #OSGT_PT_export_material,
     OSGT_PT_export_animation,
     OSGT_PT_export_extra,
