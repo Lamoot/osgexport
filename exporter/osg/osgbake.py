@@ -141,6 +141,7 @@ def bakeAction(blender_object,
                do_parents_clear=False,
                do_clean=False,
                action=None,
+               deform_only=False,
                ):
 
     """
@@ -251,13 +252,19 @@ def bakeAction(blender_object,
 
     # -------------------------------------------------------------------------
     # Apply transformations to action
-
+    def isDeform(bone):
+        if bone.use_deform:
+            return True
+        for b in bone.children_recursive:
+            if b.use_deform:
+                return True
     # pose
     if do_pose:
         for name, pbone in blender_object.pose.bones.items():
             if only_selected and not pbone.bone.select:
                 continue
-
+            if deform_only and not isDeform(blender_object.data.bones[pbone.name]):
+                continue
             # Quaternions are forced for bones
             rotation_mode_backup = pbone.rotation_mode
             if pbone.rotation_mode != 'QUATERNION':
@@ -378,7 +385,7 @@ def bakeAction(blender_object,
 
 
 # take care of restoring selection after
-def bakeAnimation(scene, start, end, frame_step, blender_object, has_action=False, use_quaternions=False):
+def bakeAnimation(scene, start, end, frame_step, blender_object, has_action=False, use_quaternions=False, deform_only=False):
     # baking will replace the current action but we want to keep scene unchanged
     original_action = blender_object.animation_data.action if has_action else None
 
@@ -399,7 +406,9 @@ def bakeAnimation(scene, start, end, frame_step, blender_object, has_action=Fals
                               do_pose=True,  # bake skeletal animation
                               use_quaternions=use_quaternions,  # use_quaternions,
                               # visual keying bakes in worldspace, but here we want it local since we keep parenting
-                              do_visual_keying=do_visual_keying)
+                              do_visual_keying=do_visual_keying,
+                              deform_only=deform_only,
+                              )
 
     # restore original action and armatures' pose position
     blender_object.animation_data.action = original_action

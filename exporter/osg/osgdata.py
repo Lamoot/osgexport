@@ -1633,7 +1633,8 @@ class BlenderAnimationToAnimation(object):
                                                         self.config.bake_frame_step,
                                                         self.object,
                                                         use_quaternions=self.config.use_quaternions,
-                                                        has_action=self.has_action)
+                                                        has_action=self.has_action,
+                                                        deform_only=self.config.arm_deform_only)
             self.baked_actions.append(self.current_action)
         self.action_name = self.object.animation_data.action.name if self.has_action else 'Action_baked'
 
