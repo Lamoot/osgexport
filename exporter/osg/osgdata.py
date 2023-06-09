@@ -462,10 +462,30 @@ class Export(object):
             if bone.parent is None:
                 root_bones.append(bone)
         
-        for bone in root_bones:
-            b = Bone(blender_object, bone)
-            b.buildBoneChildren(use_pose=use_pose, scale_factor=self.config.scale_factor)
-            skeleton.children.append(b)
+        def isDeform(bone):
+            if bone.use_deform:
+                return True
+            for b in bone.children_recursive:
+                if b.use_deform:
+                    return True
+        
+        if self.config.arm_deform_only:            
+            for bone in root_bones:
+                if isDeform(bone):
+                    b = Bone(blender_object, bone)
+                    b.buildBoneChildren(use_pose=use_pose,
+                                        scale_factor=self.config.scale_factor,
+                                        deform_only=self.config.arm_deform_only
+                                        )
+                    skeleton.children.append(b)        
+        else:
+            for bone in root_bones:
+                b = Bone(blender_object, bone)
+                b.buildBoneChildren(use_pose=use_pose,
+                                    scale_factor=self.config.scale_factor,
+                                    deform_only=self.config.arm_deform_only
+                                    )
+                skeleton.children.append(b)            
         skeleton.collectBones()
 
         if use_pose and blender_object in self.rest_armatures:
