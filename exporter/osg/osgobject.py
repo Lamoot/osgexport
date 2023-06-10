@@ -24,6 +24,7 @@ import bpy
 import json
 import mathutils
 from collections import OrderedDict
+from .osgutils import isDeform
 
 Matrix = mathutils.Matrix
 Vector = mathutils.Vector
@@ -1220,22 +1221,11 @@ class Bone(MatrixTransform):
         
         if not self.bone.children:
             return
-        
-        def isDeform(bone):
-            if bone.use_deform:
-                return True
-            for b in bone.children_recursive:
-                if b.use_deform:
-                    return True
-        
-        if deform_only:
-            for boneChild in self.bone.children:
-                if isDeform(boneChild):
-                    b = Bone(self.skeleton, boneChild, self)
-                    self.children.append(b)
-                    b.buildBoneChildren(use_pose, scale_factor, deform_only)
-        else:
-            for boneChild in self.bone.children:
+
+        for boneChild in self.bone.children:
+            if deform_only and not isDeform(boneChild):
+                continue
+            else:
                 b = Bone(self.skeleton, boneChild, self)
                 self.children.append(b)
                 b.buildBoneChildren(use_pose, scale_factor, deform_only)

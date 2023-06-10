@@ -19,6 +19,7 @@
 # <pep8-80 compliant>
 import bpy
 import bisect
+from mathutils import Vector, Matrix
 from .osgutils import *
 
 
@@ -141,7 +142,7 @@ def bakeAction(blender_object,
                do_parents_clear=False,
                do_clean=False,
                action=None,
-               deform_only=False,
+               bake_deform_only=False,
                ):
 
     """
@@ -252,12 +253,7 @@ def bakeAction(blender_object,
 
     # -------------------------------------------------------------------------
     # Apply transformations to action
-    def isDeform(bone):
-        if bone.use_deform:
-            return True
-        for b in bone.children_recursive:
-            if b.use_deform:
-                return True
+
     # pose
     if do_pose:
         for name, pbone in blender_object.pose.bones.items():
@@ -407,7 +403,7 @@ def bakeAnimation(scene, start, end, frame_step, blender_object, has_action=Fals
                               use_quaternions=use_quaternions,  # use_quaternions,
                               # visual keying bakes in worldspace, but here we want it local since we keep parenting
                               do_visual_keying=do_visual_keying,
-                              deform_only=deform_only,
+                              bake_deform_only=deform_only,
                               )
 
     # restore original action and armatures' pose position
