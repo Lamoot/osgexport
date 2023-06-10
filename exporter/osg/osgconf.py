@@ -63,6 +63,7 @@ class Config(object):
         self.defaultattr("bake_constraints", True)
         self.defaultattr("bake_frame_step", 1)
         self.defaultattr("arm_rest", False)
+        self.defaultattr("arm_deform_only", True)
         self.defaultattr("osgconv_to_ive", False)
         self.defaultattr("scale_factor", 1)
         osgconv_util = "osgconv"

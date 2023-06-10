@@ -461,11 +461,17 @@ class Export(object):
         for bone in blender_object.data.bones:
             if bone.parent is None:
                 root_bones.append(bone)
-        
+
         for bone in root_bones:
-            b = Bone(blender_object, bone)
-            b.buildBoneChildren(use_pose=use_pose, scale_factor=self.config.scale_factor)
-            skeleton.children.append(b)
+            if self.config.arm_deform_only and not isDeform(bone):
+                continue
+            else:
+                b = Bone(blender_object, bone)
+                b.buildBoneChildren(use_pose=use_pose,
+                                    scale_factor=self.config.scale_factor,
+                                    deform_only=self.config.arm_deform_only
+                                    )
+                skeleton.children.append(b)        
         skeleton.collectBones()
 
         if use_pose and blender_object in self.rest_armatures:
@@ -1613,7 +1619,8 @@ class BlenderAnimationToAnimation(object):
                                                         self.config.bake_frame_step,
                                                         self.object,
                                                         use_quaternions=self.config.use_quaternions,
-                                                        has_action=self.has_action)
+                                                        has_action=self.has_action,
+                                                        deform_only=self.config.arm_deform_only)
             self.baked_actions.append(self.current_action)
         self.action_name = self.object.animation_data.action.name if self.has_action else 'Action_baked'
 

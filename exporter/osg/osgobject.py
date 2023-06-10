@@ -24,6 +24,7 @@ import bpy
 import json
 import mathutils
 from collections import OrderedDict
+from .osgutils import isDeform
 
 Matrix = mathutils.Matrix
 Vector = mathutils.Vector
@@ -1183,7 +1184,7 @@ class Bone(MatrixTransform):
         # self.inverse_bind_matrix = Matrix().to_4x4().identity()
         self.bone_inv_bind_matrix_skeleton = Matrix().to_4x4()
 
-    def buildBoneChildren(self, use_pose=False, scale_factor=1.0):
+    def buildBoneChildren(self, use_pose=False, scale_factor=1.0, deform_only=False):
         if self.skeleton is None or self.bone is None:
             return
 
@@ -1197,7 +1198,6 @@ class Bone(MatrixTransform):
             bone_matrix = self.skeleton.pose.bones[self.bone.name].matrix.copy()
         else:
             bone_matrix = self.bone.matrix_local.copy()        
-        
 
         if self.parent:
             if use_pose:
@@ -1223,9 +1223,12 @@ class Bone(MatrixTransform):
             return
 
         for boneChild in self.bone.children:
-            b = Bone(self.skeleton, boneChild, self)
-            self.children.append(b)
-            b.buildBoneChildren(use_pose, scale_factor)
+            if deform_only and not isDeform(boneChild):
+                continue
+            else:
+                b = Bone(self.skeleton, boneChild, self)
+                self.children.append(b)
+                b.buildBoneChildren(use_pose, scale_factor, deform_only)
 
     def getMatrixInArmatureSpace(self):
         return self.bone.matrix_local

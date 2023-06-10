@@ -176,6 +176,16 @@ def hasNLATracks(blender_object):
         blender_object.animation_data.nla_tracks
 
 
+def isDeform(bone):
+    if bone.use_deform:
+        return True
+    for b in bone.children_recursive:
+        if b.use_deform:
+            return True
+    
+    return False
+
+
 def isRigAction(action):
     for curve in action.fcurves:
         if 'pose.bones' in curve.data_path:
