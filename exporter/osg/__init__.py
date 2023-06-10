@@ -249,7 +249,7 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
     
     ARMATURE_DEFORM_ONLY : BoolProperty(
         name="Only Deform Bones",
-        description=("Only export bones which are enabled to deform geometry"),
+        description="Only export bones which are enabled to deform geometry",
         default=True,
         )
     

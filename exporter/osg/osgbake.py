@@ -259,7 +259,7 @@ def bakeAction(blender_object,
         for name, pbone in blender_object.pose.bones.items():
             if only_selected and not pbone.bone.select:
                 continue
-            if deform_only and not isDeform(blender_object.data.bones[pbone.name]):
+            if bake_deform_only and not isDeform(blender_object.data.bones[pbone.name]):
                 continue
             # Quaternions are forced for bones
             rotation_mode_backup = pbone.rotation_mode

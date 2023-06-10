@@ -1184,7 +1184,7 @@ class Bone(MatrixTransform):
         # self.inverse_bind_matrix = Matrix().to_4x4().identity()
         self.bone_inv_bind_matrix_skeleton = Matrix().to_4x4()
 
-    def buildBoneChildren(self, use_pose=False, scale_factor=1.0, deform_only=True):
+    def buildBoneChildren(self, use_pose=False, scale_factor=1.0, deform_only=False):
         if self.skeleton is None or self.bone is None:
             return
 
