@@ -1719,10 +1719,6 @@ class BlenderAnimationToAnimation(object):
                     parseSolidRigAction()
             elif hasShapeKeys(self.object):
                 parseMorphAction()
-        
-        for track in self.object.animation_data.nla_tracks:
-            for strip in track.strips:
-                print(strip.name)
 
         return anims
 
