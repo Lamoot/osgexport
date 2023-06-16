@@ -312,6 +312,13 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
         description="Create a textures folder in the same location as the exported file",
         default=False
         )
+    
+    EXPORT_TEXTKEYS : BoolProperty(
+        name="Export Textkeys",
+        description="Export a textkeys file based on pose markers in each exported action."
+                     " Needed to define animations for OpenMW",
+        default=False,
+        )
 
     def draw(self, context):
         pass
@@ -357,6 +364,7 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
         self.EXPORT_ALL_SCENES = self.config.export_all_scenes
         self.SCALE_FACTOR = self.config.scale_factor
         self.EXPORT_TEXTURES = self.config.export_textures
+        self.EXPORT_TEXTKEYS = self.config.export_textkeys
 
         if bpy.data.filepath in self.config.history:
             self.filepath = self.config.history[bpy.data.filepath]
@@ -398,6 +406,7 @@ class OSGGUI(bpy.types.Operator, ExportHelper):
         self.config.osgconv_cleanup = self.OSGCONV_CLEANUP
         self.config.scale_factor = self.SCALE_FACTOR
         self.config.export_textures = self.EXPORT_TEXTURES
+        self.config.export_textkeys = self.EXPORT_TEXTKEYS
 
         try:
             cfg = os.path.join(bpy.utils.user_resource('CONFIG'), "osgExport.cfg")
@@ -569,6 +578,7 @@ class OSGT_PT_export_animation(bpy.types.Panel):
         col.prop(operator, 'BAKE_ALL')
         col.prop(operator, 'BAKE_CONSTRAINTS')
         col.prop(operator, 'USE_QUATERNIONS')
+        col.prop(operator, 'EXPORT_TEXTKEYS')
 
 
 class OSGT_PT_export_postprocess(bpy.types.Panel):

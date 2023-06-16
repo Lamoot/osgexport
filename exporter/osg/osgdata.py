@@ -315,6 +315,43 @@ class Export(object):
                 osg_object.update_callbacks = []
             osg_object.update_callbacks.append(update_callback)
 
+    def exportTextkeys(self, blender_object, filepath):
+        """
+        Writes a .txt file containing textkeys,
+        which are animation definitions
+        needed by the OpenMW game engine.
+        """
+        context = bpy.context
+        scene = context.scene
+        textkeys_output = open(filepath, "w")
+        markers = []
+        strips_cache = []
+
+        # Gather all relevant strips
+        for track in blender_object.animation_data.nla_tracks:
+            if track.mute:
+                continue
+            for strip in track.strips:
+                if strip.mute:
+                    continue
+                strips_cache.append(strip)
+        
+        # Gather all relevant markers
+        for s in sorted(strips_cache, key=lambda x: x.frame_start):        
+            for m in sorted(s.action.pose_markers, key=lambda x: x.frame):
+                # Frame offset based on the parent strip scale and
+                # position in the NLA editor.
+                frame = (m.frame * s.scale
+                        - (s.scale - 1)
+                        + s.frame_start - 1)
+                frame = frame * 1/scene.render.fps
+                # Textkeys don't work if they are not lower case.
+                markers.append(("{} {}").format(str(m.name), str(frame)).lower())
+
+        for m in markers:
+            textkeys_output.write(m + '\n')
+        textkeys_output.close()
+
     def exportChildrenRecursively(self, blender_object, parent, osg_root):
         def parseArmature(blender_armature):
             osg_object = self.createSkeleton(blender_object)
@@ -324,6 +361,10 @@ class Export(object):
                                                               rotation_mode),
                                         self.unique_objects,
                                         self.parse_all_actions)
+            
+            if self.config.export_textkeys:
+                self.exportTextkeys(blender_armature, self.config.getFullName("txt"))
+                
             return osg_object
 
         def parseLight(blender_light):
@@ -1778,7 +1819,6 @@ class BlenderAnimationToAnimation(object):
 
         return channel
 
-    # as for blender 2.49
     def exportActionsToKeyframeSplitRotationTranslationScale(self, target, action, fps, prefix, osg_targetname=''):
         channels = []
 
